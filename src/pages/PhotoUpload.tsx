@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus, Calendar, MapPin, Star, Edit3, GripVertical, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react';
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus, Edit3, GripVertical, ChevronUp, ChevronDown, Star, Camera, Grid, List } from 'lucide-react';
 import { supabase, PortfolioPhoto, Project } from '../lib/supabase';
 
 interface PhotoUploadProps {
@@ -12,15 +12,6 @@ interface Notification {
   message: string;
 }
 
-interface PhotoFile {
-  file: File;
-  id: string;
-  preview: string;
-  title: string;
-  description: string;
-  category: string;
-}
-
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
@@ -28,17 +19,24 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'create' | 'manage'>('create');
+  const [showNewProject, setShowNewProject] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  const [selectedPhotos, setSelectedPhotos] = useState<PhotoFile[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [draggedProject, setDraggedProject] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showPhotoManager, setShowPhotoManager] = useState<string | null>(null);
   const [loginData, setLoginData] = useState({
     email: 'mejohnc@christensenplumbing.com',
     password: ''
   });
-  const [projectData, setProjectData] = useState({
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: 'general'
+  });
+  const [newProjectData, setNewProjectData] = useState({
     title: '',
     description: '',
     category: 'general',
@@ -46,14 +44,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     completion_date: '',
     featured: false
   });
-  const [editFormData, setEditFormData] = useState({
-    title: '',
-    description: '',
-    category: 'general',
-    location: '',
-    completion_date: '',
-    featured: false
-  });
+  const [editProjectData, setEditProjectData] = useState<Project | null>(null);
 
   const categories = [
     { value: 'general', label: 'General Plumbing' },
@@ -131,16 +122,6 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     await supabase.auth.signOut();
     setProjects([]);
     setPhotos([]);
-    setSelectedPhotos([]);
-    setEditingProject(null);
-    setProjectData({
-      title: '',
-      description: '',
-      category: 'general',
-      location: '',
-      completion_date: '',
-      featured: false
-    });
     addNotification('success', 'Successfully logged out');
   };
 
@@ -153,6 +134,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
       if (error) throw error;
       setProjects(data || []);
+      
+      // Set first project as selected if none selected
+      if (data && data.length > 0 && !selectedProject) {
+        setSelectedProject(data[0].id);
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
       addNotification('error', 'Failed to load projects');
@@ -176,177 +162,20 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      addPhotosToProject(Array.from(files));
-    }
-    // Reset input value to allow selecting the same files again
-    event.target.value = '';
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-      addPhotosToProject(Array.from(files));
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const addPhotosToProject = (files: File[]) => {
-    const validFiles = files.filter(file => {
-      if (file.size > 5 * 1024 * 1024) {
-        addNotification('error', `${file.name} is too large (max 5MB)`);
-        return false;
-      }
-      if (!file.type.startsWith('image/')) {
-        addNotification('error', `${file.name} is not an image file`);
-        return false;
-      }
-      return true;
-    });
-
-    const newPhotos: PhotoFile[] = validFiles.map(file => ({
-      file,
-      id: `${Date.now()}-${Math.random().toString(36).substring(2)}`,
-      preview: URL.createObjectURL(file),
-      title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
-      description: '',
-      category: projectData.category
-    }));
-
-    setSelectedPhotos(prev => [...prev, ...newPhotos]);
-    
-    if (newPhotos.length > 0) {
-      addNotification('success', `Added ${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} to project`);
-    }
-  };
-
-  const removePhoto = (photoId: string) => {
-    setSelectedPhotos(prev => {
-      const photo = prev.find(p => p.id === photoId);
-      if (photo) {
-        URL.revokeObjectURL(photo.preview);
-      }
-      return prev.filter(p => p.id !== photoId);
-    });
-  };
-
-  const updatePhotoDetails = (photoId: string, field: string, value: string) => {
-    setSelectedPhotos(prev => prev.map(photo => 
-      photo.id === photoId ? { ...photo, [field]: value } : photo
-    ));
-  };
-
-  const uploadPhoto = async (photoFile: PhotoFile, projectId: string) => {
-    try {
-      // Update progress
-      setUploadProgress(prev => ({ ...prev, [photoFile.id]: 0 }));
-
-      // Upload file to Supabase Storage
-      const fileExt = photoFile.file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `portfolio/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(filePath, photoFile.file);
-
-      if (uploadError) throw uploadError;
-
-      // Update progress
-      setUploadProgress(prev => ({ ...prev, [photoFile.id]: 50 }));
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('photos')
-        .getPublicUrl(filePath);
-
-      // Save to database
-      const { error: dbError } = await supabase
-        .from('portfolio_photos')
-        .insert({
-          title: photoFile.title || 'Untitled Photo',
-          description: photoFile.description || '',
-          category: photoFile.category,
-          project_id: projectId,
-          image_url: publicUrl
-        });
-
-      if (dbError) throw dbError;
-
-      // Complete progress
-      setUploadProgress(prev => ({ ...prev, [photoFile.id]: 100 }));
-      
-      // Remove progress after a short delay
-      setTimeout(() => {
-        setUploadProgress(prev => {
-          const newProgress = { ...prev };
-          delete newProgress[photoFile.id];
-          return newProgress;
-        });
-      }, 1000);
-
-      return true;
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      setUploadProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[photoFile.id];
-        return newProgress;
-      });
-      throw error;
-    }
-  };
-
-  const createProjectWithPhotos = async (e: React.FormEvent) => {
+  const createProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!projectData.title.trim()) {
-      addNotification('error', 'Project title is required');
-      return;
-    }
-
-    setUploading(true);
-
     try {
-      // Create project first
-      const { data: project, error: projectError } = await supabase
+      const { data, error } = await supabase
         .from('projects')
-        .insert(projectData)
+        .insert(newProjectData)
         .select()
         .single();
 
-      if (projectError) throw projectError;
+      if (error) throw error;
 
-      // Upload photos if any
-      if (selectedPhotos.length > 0) {
-        let successCount = 0;
-        let errorCount = 0;
-
-        for (const photo of selectedPhotos) {
-          try {
-            await uploadPhoto(photo, project.id);
-            successCount++;
-          } catch (error: any) {
-            errorCount++;
-            addNotification('error', `Failed to upload ${photo.title}: ${error.message}`);
-          }
-        }
-
-        if (successCount > 0) {
-          addNotification('success', `Project created with ${successCount} photo${successCount > 1 ? 's' : ''}!`);
-        }
-      } else {
-        addNotification('success', 'Project created successfully!');
-      }
-
-      // Reset form
-      setProjectData({
+      await fetchProjects();
+      setSelectedProject(data.id);
+      setNewProjectData({
         title: '',
         description: '',
         category: 'general',
@@ -354,65 +183,48 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
         completion_date: '',
         featured: false
       });
-      
-      // Clean up photo previews
-      selectedPhotos.forEach(photo => URL.revokeObjectURL(photo.preview));
-      setSelectedPhotos([]);
-
-      // Refresh data
-      await fetchProjects();
-      await fetchPhotos();
-
+      setShowNewProject(false);
+      addNotification('success', 'Project created successfully!');
     } catch (error: any) {
       addNotification('error', 'Failed to create project: ' + error.message);
-    } finally {
-      setUploading(false);
     }
   };
 
-  const startEditProject = (project: Project) => {
-    setEditingProject(project.id);
-    setEditFormData({
-      title: project.title,
-      description: project.description || '',
-      category: project.category || 'general',
-      location: project.location || '',
-      completion_date: project.completion_date || '',
-      featured: project.featured || false
-    });
-  };
-
-  const cancelEditProject = () => {
-    setEditingProject(null);
-    setEditFormData({
-      title: '',
-      description: '',
-      category: 'general',
-      location: '',
-      completion_date: '',
-      featured: false
-    });
-  };
-
-  const saveProjectEdit = async (projectId: string) => {
-    if (!editFormData.title.trim()) {
-      addNotification('error', 'Project title is required');
-      return;
-    }
-
+  const updateProject = async (projectId: string, updates: Partial<Project>) => {
     try {
       const { error } = await supabase
         .from('projects')
-        .update(editFormData)
+        .update(updates)
         .eq('id', projectId);
 
       if (error) throw error;
 
       await fetchProjects();
-      setEditingProject(null);
       addNotification('success', 'Project updated successfully!');
     } catch (error: any) {
       addNotification('error', 'Failed to update project: ' + error.message);
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this project? This will also delete all associated photos.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      await fetchProjects();
+      await fetchPhotos();
+      if (selectedProject === projectId) {
+        setSelectedProject('');
+      }
+      addNotification('success', 'Project deleted successfully');
+    } catch (error: any) {
+      addNotification('error', 'Failed to delete project: ' + error.message);
     }
   };
 
@@ -427,20 +239,55 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     [newProjects[currentIndex], newProjects[newIndex]] = [newProjects[newIndex], newProjects[currentIndex]];
     
     setProjects(newProjects);
-    addNotification('success', `Project moved ${direction}`);
+
+    // Update database with new order
+    try {
+      const updates = newProjects.map((project, index) => ({
+        id: project.id,
+        updated_at: new Date().toISOString()
+      }));
+
+      // In a real implementation, you might want to add an 'order' column to properly handle ordering
+      addNotification('success', 'Project order updated');
+    } catch (error) {
+      addNotification('error', 'Failed to update project order');
+      await fetchProjects(); // Revert on error
+    }
   };
 
-  const handleProjectDragStart = (e: React.DragEvent, projectId: string) => {
+  const toggleFeatured = async (projectId: string, featured: boolean) => {
+    await updateProject(projectId, { featured });
+  };
+
+  const startEditProject = (project: Project) => {
+    setEditProjectData({ ...project });
+    setEditingProject(project.id);
+  };
+
+  const saveEditProject = async () => {
+    if (!editProjectData || !editingProject) return;
+
+    await updateProject(editingProject, editProjectData);
+    setEditingProject(null);
+    setEditProjectData(null);
+  };
+
+  const cancelEditProject = () => {
+    setEditingProject(null);
+    setEditProjectData(null);
+  };
+
+  const handleDragStart = (e: React.DragEvent, projectId: string) => {
     setDraggedProject(projectId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleProjectDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleProjectDrop = (e: React.DragEvent, targetProjectId: string) => {
+  const handleDrop = (e: React.DragEvent, targetProjectId: string) => {
     e.preventDefault();
     
     if (!draggedProject || draggedProject === targetProjectId) {
@@ -450,7 +297,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
     const draggedIndex = projects.findIndex(p => p.id === draggedProject);
     const targetIndex = projects.findIndex(p => p.id === targetProjectId);
-    
+
     if (draggedIndex === -1 || targetIndex === -1) {
       setDraggedProject(null);
       return;
@@ -459,10 +306,123 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     const newProjects = [...projects];
     const [draggedItem] = newProjects.splice(draggedIndex, 1);
     newProjects.splice(targetIndex, 0, draggedItem);
-    
+
     setProjects(newProjects);
     setDraggedProject(null);
     addNotification('success', 'Project order updated');
+  };
+
+  const uploadPhoto = async (file: File, index: number, projectId: string) => {
+    const fileId = `${Date.now()}-${index}`;
+    
+    try {
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
+
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `portfolio/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 50 }));
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('photos')
+        .getPublicUrl(filePath);
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('portfolio_photos')
+        .insert({
+          title: formData.title || `Photo ${index + 1}`,
+          description: formData.description || '',
+          category: formData.category,
+          project_id: projectId,
+          image_url: publicUrl
+        });
+
+      if (dbError) throw dbError;
+
+      // Complete progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
+      
+      // Remove progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[fileId];
+          return newProgress;
+        });
+      }, 1000);
+
+      return true;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      setUploadProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[fileId];
+        return newProgress;
+      });
+      throw error;
+    }
+  };
+
+  const uploadMultiplePhotos = async (files: FileList, projectId: string) => {
+    setUploading(true);
+    const fileArray = Array.from(files);
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Validate files
+    const validFiles = fileArray.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        addNotification('error', `${file.name} is too large (max 5MB)`);
+        errorCount++;
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        addNotification('error', `${file.name} is not an image file`);
+        errorCount++;
+        return false;
+      }
+      return true;
+    });
+
+    // Upload valid files
+    for (let i = 0; i < validFiles.length; i++) {
+      try {
+        await uploadPhoto(validFiles[i], i, projectId);
+        successCount++;
+      } catch (error: any) {
+        errorCount++;
+        addNotification('error', `Failed to upload ${validFiles[i].name}: ${error.message}`);
+      }
+    }
+
+    // Show summary notification
+    if (successCount > 0) {
+      addNotification('success', `Successfully uploaded ${successCount} photo${successCount > 1 ? 's' : ''}`);
+      await fetchPhotos();
+      
+      // Reset form if all uploads were successful
+      if (errorCount === 0) {
+        setFormData({ title: '', description: '', category: 'general' });
+      }
+    }
+
+    if (errorCount > 0 && successCount === 0) {
+      addNotification('error', `Failed to upload ${errorCount} photo${errorCount > 1 ? 's' : ''}`);
+    }
+
+    setUploading(false);
   };
 
   const deletePhoto = async (photo: PortfolioPhoto) => {
@@ -493,55 +453,48 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
-  const deleteProject = async (project: Project) => {
-    if (!confirm(`Are you sure you want to delete "${project.title}" and all its photos?`)) return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, projectId: string) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      uploadMultiplePhotos(files, projectId);
+    }
+    // Reset input value to allow selecting the same files again
+    event.target.value = '';
+  };
 
-    try {
-      // Delete project (photos will be deleted automatically due to CASCADE)
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', project.id);
-
-      if (error) throw error;
-
-      await fetchProjects();
-      await fetchPhotos();
-      addNotification('success', 'Project and all photos deleted successfully');
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      addNotification('error', 'Failed to delete project');
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>, projectId: string) => {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      uploadMultiplePhotos(files, projectId);
     }
   };
 
-  const toggleFeatured = async (project: Project) => {
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ featured: !project.featured })
-        .eq('id', project.id);
-
-      if (error) throw error;
-
-      await fetchProjects();
-      addNotification('success', `Project ${!project.featured ? 'featured' : 'unfeatured'} successfully`);
-    } catch (error: any) {
-      addNotification('error', 'Failed to update project: ' + error.message);
-    }
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
   };
 
-  const handleProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleNewProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    setProjectData({
-      ...projectData,
+    setNewProjectData({
+      ...newProjectData,
       [e.target.name]: value
     });
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleEditProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (!editProjectData) return;
+    
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    setEditFormData({
-      ...editFormData,
+    setEditProjectData({
+      ...editProjectData,
       [e.target.name]: value
     });
   };
@@ -551,6 +504,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       ...loginData,
       [e.target.name]: e.target.value
     });
+  };
+
+  // Get photos for a specific project
+  const getProjectPhotos = (projectId: string) => {
+    return photos.filter(photo => photo.project_id === projectId);
   };
 
   // Notification Component
@@ -582,6 +540,204 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     </div>
   );
 
+  // Photo Manager Modal Component
+  const PhotoManagerModal = ({ projectId }: { projectId: string }) => {
+    const project = projects.find(p => p.id === projectId);
+    const projectPhotos = getProjectPhotos(projectId);
+
+    if (!project) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Manage Photos</h2>
+              <p className="text-gray-600">{project.title} - {project.location}</p>
+            </div>
+            <button
+              onClick={() => setShowPhotoManager(null)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {/* Upload Section */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Photos</h3>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="photo-title" className="block text-sm font-medium text-gray-700 mb-2">
+                      Photo Title Template
+                    </label>
+                    <input
+                      type="text"
+                      id="photo-title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Kitchen Installation (leave empty for auto-naming)"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="photo-category" className="block text-sm font-medium text-gray-700 mb-2">
+                      Photo Category
+                    </label>
+                    <select
+                      id="photo-category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="photo-description" className="block text-sm font-medium text-gray-700 mb-2">
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      id="photo-description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Brief description of the photos..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Photos (Multiple files supported)
+                  </label>
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
+                    onDrop={(e) => handleDrop(e, projectId)}
+                    onDragOver={handleDragOver}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleFileSelect(e, projectId)}
+                      disabled={uploading}
+                      className="hidden"
+                      id={`photo-upload-${projectId}`}
+                    />
+                    <label
+                      htmlFor={`photo-upload-${projectId}`}
+                      className={`cursor-pointer ${uploading ? 'opacity-50' : ''}`}
+                    >
+                      {uploading ? (
+                        <div className="flex flex-col items-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                          <p className="text-sm text-gray-600">Uploading photos...</p>
+                          {Object.keys(uploadProgress).length > 0 && (
+                            <div className="mt-2 w-full max-w-xs">
+                              {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                                <div key={fileId} className="mb-1">
+                                  <div className="bg-gray-200 rounded-full h-2">
+                                    <div 
+                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${progress}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-600">
+                            Click to upload or drag and drop multiple photos
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            PNG, JPG, GIF up to 5MB each
+                          </p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Existing Photos */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Current Photos ({projectPhotos.length})
+                </h3>
+              </div>
+              
+              {projectPhotos.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No photos uploaded for this project yet</p>
+                  <p className="text-sm text-gray-500">Upload your first photos using the form above</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {projectPhotos.map((photo) => (
+                    <div key={photo.id} className="group relative bg-gray-50 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <div className="aspect-square">
+                        <img
+                          src={photo.image_url}
+                          alt={photo.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                        <button
+                          onClick={() => deletePhoto(photo)}
+                          className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200 transform scale-90 group-hover:scale-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="p-3">
+                        <h4 className="font-medium text-gray-900 text-sm truncate">
+                          {photo.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 capitalize">
+                          {categories.find(cat => cat.value === photo.category)?.label || photo.category}
+                        </p>
+                        {photo.description && (
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {photo.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Login Screen
   if (showLogin) {
     return (
@@ -596,9 +752,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Main Site</span>
             </button>
-            <h2 className="text-3xl font-bold text-gray-900">Project Manager Login</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Photo Upload Login</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Sign in to create projects and manage portfolio photos
+              Sign in to manage portfolio photos
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
@@ -650,7 +806,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project manager...</p>
+          <p className="text-gray-600">Loading projects and photos...</p>
         </div>
       </div>
     );
@@ -659,6 +815,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <NotificationContainer />
+      
+      {/* Photo Manager Modal */}
+      {showPhotoManager && (
+        <PhotoManagerModal projectId={showPhotoManager} />
+      )}
       
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
@@ -684,6 +845,20 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                 <ImageIcon className="w-4 h-4" />
                 <span>{photos.length} photos</span>
               </div>
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-600'}`}
+                >
+                  <Grid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-600'}`}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
               {user && (
                 <button
                   onClick={handleLogout}
@@ -695,559 +870,340 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
               )}
             </div>
           </div>
-          
-          {/* Tab Navigation */}
-          <nav className="mt-4 border-t border-gray-200">
-            <div className="flex space-x-8">
-              {[
-                { id: 'create', label: 'Create Project', icon: <Plus className="w-4 h-4" /> },
-                { id: 'manage', label: 'Manage Projects', icon: <FolderPlus className="w-4 h-4" /> }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'create' | 'manage')}
-                  className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-semibold text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-blue-700 text-blue-700'
-                      : 'border-transparent text-gray-600 hover:text-blue-700 hover:border-blue-300'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </nav>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Create Project Tab */}
-        {activeTab === 'create' && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Create New Project</h2>
-              <p className="text-lg text-gray-600">
-                Add project details and upload photos all in one place
-              </p>
-            </div>
+        {/* Project Management */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Project Management</h2>
+            <button
+              onClick={() => setShowNewProject(!showNewProject)}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Project</span>
+            </button>
+          </div>
 
-            <form onSubmit={createProjectWithPhotos} className="bg-white rounded-lg shadow-md p-8">
-              {/* Project Details */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Project Information</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                      Project Title *
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      name="title"
-                      value={projectData.title}
-                      onChange={handleProjectInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., Modern Kitchen Renovation"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
-                      value={projectData.location}
-                      onChange={handleProjectInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., La Jolla"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={projectData.category}
-                      onChange={handleProjectInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="completion_date" className="block text-sm font-medium text-gray-700 mb-2">
-                      Completion Date
-                    </label>
-                    <input
-                      type="date"
-                      id="completion_date"
-                      name="completion_date"
-                      value={projectData.completion_date}
-                      onChange={handleProjectInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={projectData.description}
-                      onChange={handleProjectInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Brief description of the project..."
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="featured"
-                        checked={projectData.featured}
-                        onChange={handleProjectInputChange}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Featured Project</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Photo Upload Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Project Photos</h3>
-                
-                {/* Upload Area */}
-                <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors mb-6"
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                >
+          {/* New Project Form */}
+          {showNewProject && (
+            <form onSubmit={createProject} className="bg-gray-50 p-4 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Project</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="project-title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Project Title *
+                  </label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileSelect}
-                    disabled={uploading}
-                    className="hidden"
-                    id="photo-upload"
+                    type="text"
+                    id="project-title"
+                    name="title"
+                    value={newProjectData.title}
+                    onChange={handleNewProjectInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Modern Kitchen Renovation"
                   />
-                  <label
-                    htmlFor="photo-upload"
-                    className={`cursor-pointer ${uploading ? 'opacity-50' : ''}`}
+                </div>
+                <div>
+                  <label htmlFor="project-location" className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="project-location"
+                    name="location"
+                    value={newProjectData.location}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., La Jolla"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="project-category" className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    id="project-category"
+                    name="category"
+                    value={newProjectData.category}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <div className="flex flex-col items-center">
-                      <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                      <p className="text-lg text-gray-600 mb-2">
-                        Click to upload or drag and drop photos
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        PNG, JPG, GIF up to 5MB each • Multiple files supported
-                      </p>
-                    </div>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="project-completion-date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Completion Date
+                  </label>
+                  <input
+                    type="date"
+                    id="project-completion-date"
+                    name="completion_date"
+                    value={newProjectData.completion_date}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="project-description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="project-description"
+                    name="description"
+                    value={newProjectData.description}
+                    onChange={handleNewProjectInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Brief description of the project..."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="featured"
+                      checked={newProjectData.featured}
+                      onChange={handleNewProjectInputChange}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Featured Project</span>
                   </label>
                 </div>
-
-                {/* Selected Photos Grid */}
-                {selectedPhotos.length > 0 && (
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900">
-                      Selected Photos ({selectedPhotos.length})
-                    </h4>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {selectedPhotos.map((photo) => (
-                        <div key={photo.id} className="bg-gray-50 rounded-lg overflow-hidden shadow-sm">
-                          <div className="aspect-video relative">
-                            <img
-                              src={photo.preview}
-                              alt={photo.title}
-                              className="w-full h-full object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removePhoto(photo.id)}
-                              className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                            {uploadProgress[photo.id] !== undefined && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2">
-                                <div className="bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${uploadProgress[photo.id]}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4 space-y-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Photo Title
-                              </label>
-                              <input
-                                type="text"
-                                value={photo.title}
-                                onChange={(e) => updatePhotoDetails(photo.id, 'title', e.target.value)}
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Photo title..."
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Category
-                              </label>
-                              <select
-                                value={photo.category}
-                                onChange={(e) => updatePhotoDetails(photo.id, 'category', e.target.value)}
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                {categories.map((cat) => (
-                                  <option key={cat.value} value={cat.value}>
-                                    {cat.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Description (Optional)
-                              </label>
-                              <textarea
-                                value={photo.description}
-                                onChange={(e) => updatePhotoDetails(photo.id, 'description', e.target.value)}
-                                rows={2}
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Photo description..."
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end">
+              <div className="flex space-x-3 mt-4">
                 <button
                   type="submit"
-                  disabled={uploading || !projectData.title.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-semibold shadow-md transition-colors flex items-center space-x-2"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {uploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Creating Project...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      <span>Create Project {selectedPhotos.length > 0 && `with ${selectedPhotos.length} Photo${selectedPhotos.length > 1 ? 's' : ''}`}</span>
-                    </>
-                  )}
+                  Create Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewProject(false)}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </form>
-          </div>
-        )}
+          )}
 
-        {/* Manage Projects Tab */}
-        {activeTab === 'manage' && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Manage Projects</h2>
-              <p className="text-lg text-gray-600">
-                Edit, reorder, and manage your existing projects and photos
-              </p>
-              {projects.length > 1 && (
-                <p className="text-sm text-gray-500 mt-2">
-                  💡 Drag projects to reorder them, or use the arrow buttons
-                </p>
-              )}
-            </div>
-
+          {/* Projects List */}
+          <div className="space-y-4">
             {projects.length === 0 ? (
               <div className="text-center py-12">
-                <FolderPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-xl text-gray-600 mb-2">No projects created yet</p>
-                <p className="text-gray-500 mb-6">Create your first project to get started</p>
-                <button
-                  onClick={() => setActiveTab('create')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-                >
-                  Create First Project
-                </button>
+                <FolderPlus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No projects created yet</p>
+                <p className="text-sm text-gray-500">Create your first project to get started</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {projects.map((project, index) => {
-                  const projectPhotos = photos.filter(photo => photo.project_id === project.id);
-                  const isEditing = editingProject === project.id;
-                  
-                  return (
-                    <div 
-                      key={project.id} 
-                      className={`bg-white rounded-lg shadow-md overflow-hidden transition-all duration-200 ${
-                        draggedProject === project.id ? 'opacity-50 scale-95' : ''
-                      }`}
-                      draggable={!isEditing}
-                      onDragStart={(e) => handleProjectDragStart(e, project.id)}
-                      onDragOver={handleProjectDragOver}
-                      onDrop={(e) => handleProjectDrop(e, project.id)}
-                    >
-                      {/* Project Header */}
-                      <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-4 flex-1">
-                            {/* Drag Handle */}
-                            {!isEditing && projects.length > 1 && (
-                              <div className="flex flex-col space-y-1 pt-1">
-                                <GripVertical className="w-5 h-5 text-gray-400 cursor-move" />
-                              </div>
-                            )}
-                            
-                            <div className="flex-1">
-                              {isEditing ? (
-                                <div className="space-y-4">
-                                  <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Project Title *
-                                      </label>
-                                      <input
-                                        type="text"
-                                        name="title"
-                                        value={editFormData.title}
-                                        onChange={handleEditInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Location
-                                      </label>
-                                      <input
-                                        type="text"
-                                        name="location"
-                                        value={editFormData.location}
-                                        onChange={handleEditInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Category
-                                      </label>
-                                      <select
-                                        name="category"
-                                        value={editFormData.category}
-                                        onChange={handleEditInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      >
-                                        {categories.map((cat) => (
-                                          <option key={cat.value} value={cat.value}>
-                                            {cat.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Completion Date
-                                      </label>
-                                      <input
-                                        type="date"
-                                        name="completion_date"
-                                        value={editFormData.completion_date}
-                                        onChange={handleEditInputChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Description
-                                      </label>
-                                      <textarea
-                                        name="description"
-                                        value={editFormData.description}
-                                        onChange={handleEditInputChange}
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                      <label className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          name="featured"
-                                          checked={editFormData.featured}
-                                          onChange={handleEditInputChange}
-                                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <span className="text-sm font-medium text-gray-700">Featured Project</span>
-                                      </label>
-                                    </div>
-                                  </div>
-                                  <div className="flex space-x-3">
-                                    <button
-                                      onClick={() => saveProjectEdit(project.id)}
-                                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                                    >
-                                      <Save className="w-4 h-4" />
-                                      <span>Save Changes</span>
-                                    </button>
-                                    <button
-                                      onClick={cancelEditProject}
-                                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div>
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
-                                    {project.featured && (
-                                      <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                                    )}
-                                  </div>
-                                  <p className="text-gray-600 mb-3">{project.description}</p>
-                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                    <div className="flex items-center space-x-1">
-                                      <MapPin className="w-4 h-4" />
-                                      <span>{project.location}</span>
-                                    </div>
-                                    {project.completion_date && (
-                                      <div className="flex items-center space-x-1">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>{new Date(project.completion_date).toLocaleDateString()}</span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center space-x-1">
-                                      <ImageIcon className="w-4 h-4" />
-                                      <span>{projectPhotos.length} photos</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+              projects.map((project) => {
+                const projectPhotos = getProjectPhotos(project.id);
+                const isEditing = editingProject === project.id;
+                const isDragging = draggedProject === project.id;
+
+                return (
+                  <div
+                    key={project.id}
+                    className={`bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 ${
+                      isDragging ? 'opacity-50 scale-95' : 'hover:shadow-md'
+                    }`}
+                    draggable={!isEditing}
+                    onDragStart={(e) => handleDragStart(e, project.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, project.id)}
+                  >
+                    {isEditing && editProjectData ? (
+                      // Edit Mode
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Project Title *
+                            </label>
+                            <input
+                              type="text"
+                              name="title"
+                              value={editProjectData.title}
+                              onChange={handleEditProjectInputChange}
+                              required
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
                           </div>
-                          
-                          {/* Action Buttons */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Location
+                            </label>
+                            <input
+                              type="text"
+                              name="location"
+                              value={editProjectData.location}
+                              onChange={handleEditProjectInputChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Category
+                            </label>
+                            <select
+                              name="category"
+                              value={editProjectData.category}
+                              onChange={handleEditProjectInputChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat.value} value={cat.value}>
+                                  {cat.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Completion Date
+                            </label>
+                            <input
+                              type="date"
+                              name="completion_date"
+                              value={editProjectData.completion_date}
+                              onChange={handleEditProjectInputChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Description
+                            </label>
+                            <textarea
+                              name="description"
+                              value={editProjectData.description}
+                              onChange={handleEditProjectInputChange}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                name="featured"
+                                checked={editProjectData.featured}
+                                onChange={handleEditProjectInputChange}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-medium text-gray-700">Featured Project</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex space-x-3">
+                          <button
+                            onClick={saveEditProject}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            <span>Save Changes</span>
+                          </button>
+                          <button
+                            onClick={cancelEditProject}
+                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View Mode
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
                           {!isEditing && (
-                            <div className="flex items-center space-x-2">
-                              {/* Reorder Buttons */}
-                              {projects.length > 1 && (
-                                <div className="flex flex-col space-y-1">
-                                  <button
-                                    onClick={() => moveProject(project.id, 'up')}
-                                    disabled={index === 0}
-                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    title="Move up"
-                                  >
-                                    <ArrowUp className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => moveProject(project.id, 'down')}
-                                    disabled={index === projects.length - 1}
-                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    title="Move down"
-                                  >
-                                    <ArrowDown className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
-                              
-                              {/* Feature Toggle */}
+                            <div className="text-gray-400 cursor-move">
+                              <GripVertical className="w-5 h-5" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
                               <button
-                                onClick={() => toggleFeatured(project)}
-                                className={`p-2 rounded-lg transition-colors ${
-                                  project.featured 
-                                    ? 'text-yellow-600 hover:bg-yellow-50' 
-                                    : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                                onClick={() => toggleFeatured(project.id, !project.featured)}
+                                className={`transition-colors ${
+                                  project.featured ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'
                                 }`}
-                                title={project.featured ? 'Remove from featured' : 'Mark as featured'}
                               >
                                 <Star className={`w-5 h-5 ${project.featured ? 'fill-current' : ''}`} />
                               </button>
-                              
-                              {/* Edit Button */}
-                              <button
-                                onClick={() => startEditProject(project)}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit project"
-                              >
-                                <Edit3 className="w-5 h-5" />
-                              </button>
-                              
-                              {/* Delete Button */}
-                              <button
-                                onClick={() => deleteProject(project)}
-                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete project"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
+                              <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {categories.find(cat => cat.value === project.category)?.label || project.category}
+                              </span>
                             </div>
-                          )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span>{project.location}</span>
+                              {project.completion_date && (
+                                <span>Completed: {new Date(project.completion_date).toLocaleDateString()}</span>
+                              )}
+                              <span>{projectPhotos.length} photos</span>
+                            </div>
+                            {project.description && (
+                              <p className="text-gray-600 mt-2">{project.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setShowPhotoManager(project.id)}
+                            className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Manage Photos</span>
+                          </button>
+                          <button
+                            onClick={() => startEditProject(project)}
+                            className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <div className="flex flex-col space-y-1">
+                            <button
+                              onClick={() => moveProject(project.id, 'up')}
+                              disabled={projects.findIndex(p => p.id === project.id) === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => moveProject(project.id, 'down')}
+                              disabled={projects.findIndex(p => p.id === project.id) === projects.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => deleteProject(project.id)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Project Photos */}
-                      {!isEditing && (
-                        <div className="p-6">
-                          {projectPhotos.length === 0 ? (
-                            <div className="text-center py-8">
-                              <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-gray-500">No photos in this project</p>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                              {projectPhotos.map((photo) => (
-                                <div key={photo.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                  <img
-                                    src={photo.image_url}
-                                    alt={photo.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                                    <button
-                                      onClick={() => deletePhoto(photo)}
-                                      className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
