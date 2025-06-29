@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut } from 'lucide-react';
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase, PortfolioPhoto } from '../lib/supabase';
 
 interface PhotoUploadProps {
   onBack: () => void;
+}
+
+interface Notification {
+  id: string;
+  type: 'success' | 'error';
+  message: string;
 }
 
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
@@ -12,6 +18,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [loginData, setLoginData] = useState({
     email: 'mejohnc@christensenplumbing.com',
     password: ''
@@ -59,6 +67,21 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const addNotification = (type: 'success' | 'error', message: string) => {
+    const id = Date.now().toString();
+    const notification: Notification = { id, type, message };
+    setNotifications(prev => [...prev, notification]);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -70,14 +93,16 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       if (error) throw error;
       
       setShowLogin(false);
+      addNotification('success', 'Successfully logged in!');
     } catch (error: any) {
-      alert('Login failed: ' + error.message);
+      addNotification('error', 'Login failed: ' + error.message);
     }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setPhotos([]);
+    addNotification('success', 'Successfully logged out');
   };
 
   const fetchPhotos = async () => {
@@ -91,14 +116,18 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       setPhotos(data || []);
     } catch (error) {
       console.error('Error fetching photos:', error);
+      addNotification('error', 'Failed to load photos');
     } finally {
       setLoading(false);
     }
   };
 
-  const uploadPhoto = async (file: File) => {
+  const uploadPhoto = async (file: File, index: number) => {
+    const fileId = `${Date.now()}-${index}`;
+    
     try {
-      setUploading(true);
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop();
@@ -111,6 +140,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
       if (uploadError) throw uploadError;
 
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 50 }));
+
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('photos')
@@ -120,7 +152,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       const { error: dbError } = await supabase
         .from('portfolio_photos')
         .insert({
-          title: formData.title || 'Untitled',
+          title: formData.title || `Photo ${index + 1}`,
           description: formData.description || '',
           category: formData.category,
           image_url: publicUrl
@@ -128,17 +160,78 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
       if (dbError) throw dbError;
 
-      // Reset form and refresh photos
-      setFormData({ title: '', description: '', category: 'general' });
-      await fetchPhotos();
+      // Complete progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
       
-      alert('Photo uploaded successfully!');
+      // Remove progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[fileId];
+          return newProgress;
+        });
+      }, 1000);
+
+      return true;
     } catch (error) {
       console.error('Error uploading photo:', error);
-      alert('Error uploading photo. Please try again.');
-    } finally {
-      setUploading(false);
+      setUploadProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[fileId];
+        return newProgress;
+      });
+      throw error;
     }
+  };
+
+  const uploadMultiplePhotos = async (files: FileList) => {
+    setUploading(true);
+    const fileArray = Array.from(files);
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Validate files
+    const validFiles = fileArray.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        addNotification('error', `${file.name} is too large (max 5MB)`);
+        errorCount++;
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        addNotification('error', `${file.name} is not an image file`);
+        errorCount++;
+        return false;
+      }
+      return true;
+    });
+
+    // Upload valid files
+    for (let i = 0; i < validFiles.length; i++) {
+      try {
+        await uploadPhoto(validFiles[i], i);
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        addNotification('error', `Failed to upload ${validFiles[i].name}`);
+      }
+    }
+
+    // Show summary notification
+    if (successCount > 0) {
+      addNotification('success', `Successfully uploaded ${successCount} photo${successCount > 1 ? 's' : ''}`);
+      await fetchPhotos();
+      
+      // Reset form if all uploads were successful
+      if (errorCount === 0) {
+        setFormData({ title: '', description: '', category: 'general' });
+      }
+    }
+
+    if (errorCount > 0 && successCount === 0) {
+      addNotification('error', `Failed to upload ${errorCount} photo${errorCount > 1 ? 's' : ''}`);
+    }
+
+    setUploading(false);
   };
 
   const deletePhoto = async (photo: PortfolioPhoto) => {
@@ -162,22 +255,32 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       }
 
       await fetchPhotos();
-      alert('Photo deleted successfully!');
+      addNotification('success', 'Photo deleted successfully');
     } catch (error) {
       console.error('Error deleting photo:', error);
-      alert('Error deleting photo. Please try again.');
+      addNotification('error', 'Failed to delete photo');
     }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File size must be less than 5MB');
-        return;
-      }
-      uploadPhoto(file);
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      uploadMultiplePhotos(files);
     }
+    // Reset input value to allow selecting the same files again
+    event.target.value = '';
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      uploadMultiplePhotos(files);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -194,10 +297,40 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     });
   };
 
+  // Notification Component
+  const NotificationContainer = () => (
+    <div className="fixed top-4 right-4 z-50 space-y-2">
+      {notifications.map((notification) => (
+        <div
+          key={notification.id}
+          className={`flex items-center space-x-3 px-4 py-3 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 ${
+            notification.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}
+        >
+          {notification.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600" />
+          )}
+          <p className="text-sm font-medium flex-1">{notification.message}</p>
+          <button
+            onClick={() => removeNotification(notification.id)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
   // Login Screen
   if (showLogin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <NotificationContainer />
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <button
@@ -269,6 +402,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <NotificationContainer />
+      
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -306,13 +441,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Upload Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Upload New Photo</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Upload Photos</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Photo Title
+                  Photo Title Template
                 </label>
                 <input
                   type="text"
@@ -321,7 +456,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                   value={formData.title}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Kitchen Sink Installation"
+                  placeholder="e.g., Kitchen Sink Installation (leave empty for auto-naming)"
                 />
               </div>
 
@@ -362,12 +497,17 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Photo
+                Upload Photos (Multiple files supported)
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleFileSelect}
                   disabled={uploading}
                   className="hidden"
@@ -380,16 +520,30 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                   {uploading ? (
                     <div className="flex flex-col items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                      <p className="text-sm text-gray-600">Uploading...</p>
+                      <p className="text-sm text-gray-600">Uploading photos...</p>
+                      {Object.keys(uploadProgress).length > 0 && (
+                        <div className="mt-2 w-full max-w-xs">
+                          {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                            <div key={fileId} className="mb-1">
+                              <div className="bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${progress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">
-                        Click to upload or drag and drop
+                        Click to upload or drag and drop multiple photos
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG, GIF up to 5MB
+                        PNG, JPG, GIF up to 5MB each
                       </p>
                     </div>
                   )}
@@ -407,7 +561,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
             <div className="text-center py-12">
               <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">No photos uploaded yet</p>
-              <p className="text-sm text-gray-500">Upload your first photo to get started</p>
+              <p className="text-sm text-gray-500">Upload your first photos to get started</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
