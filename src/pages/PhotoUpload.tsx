@@ -49,7 +49,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     { value: 'kitchen', label: 'Kitchen Plumbing' },
     { value: 'water-heater', label: 'Water Heaters' },
     { value: 'pipes', label: 'Pipe Work' },
-    { value: 'drains', label: 'Drain Cleaning' }
+    { value: 'drains', label: 'Drain Cleaning' },
+    { value: 'custom-work', label: 'Custom Work' }
   ];
 
   useEffect(() => {
