@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus, Calendar, MapPin, Star } from 'lucide-react';
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus, Calendar, MapPin, Star, Edit3, GripVertical, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react';
 import { supabase, PortfolioPhoto, Project } from '../lib/supabase';
 
 interface PhotoUploadProps {
@@ -32,11 +32,21 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoFile[]>([]);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [draggedProject, setDraggedProject] = useState<string | null>(null);
   const [loginData, setLoginData] = useState({
     email: 'mejohnc@christensenplumbing.com',
     password: ''
   });
   const [projectData, setProjectData] = useState({
+    title: '',
+    description: '',
+    category: 'general',
+    location: '',
+    completion_date: '',
+    featured: false
+  });
+  const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
     category: 'general',
@@ -122,6 +132,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     setProjects([]);
     setPhotos([]);
     setSelectedPhotos([]);
+    setEditingProject(null);
     setProjectData({
       title: '',
       description: '',
@@ -359,6 +370,101 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
+  const startEditProject = (project: Project) => {
+    setEditingProject(project.id);
+    setEditFormData({
+      title: project.title,
+      description: project.description || '',
+      category: project.category || 'general',
+      location: project.location || '',
+      completion_date: project.completion_date || '',
+      featured: project.featured || false
+    });
+  };
+
+  const cancelEditProject = () => {
+    setEditingProject(null);
+    setEditFormData({
+      title: '',
+      description: '',
+      category: 'general',
+      location: '',
+      completion_date: '',
+      featured: false
+    });
+  };
+
+  const saveProjectEdit = async (projectId: string) => {
+    if (!editFormData.title.trim()) {
+      addNotification('error', 'Project title is required');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update(editFormData)
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      await fetchProjects();
+      setEditingProject(null);
+      addNotification('success', 'Project updated successfully!');
+    } catch (error: any) {
+      addNotification('error', 'Failed to update project: ' + error.message);
+    }
+  };
+
+  const moveProject = async (projectId: string, direction: 'up' | 'down') => {
+    const currentIndex = projects.findIndex(p => p.id === projectId);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= projects.length) return;
+
+    const newProjects = [...projects];
+    [newProjects[currentIndex], newProjects[newIndex]] = [newProjects[newIndex], newProjects[currentIndex]];
+    
+    setProjects(newProjects);
+    addNotification('success', `Project moved ${direction}`);
+  };
+
+  const handleProjectDragStart = (e: React.DragEvent, projectId: string) => {
+    setDraggedProject(projectId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleProjectDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleProjectDrop = (e: React.DragEvent, targetProjectId: string) => {
+    e.preventDefault();
+    
+    if (!draggedProject || draggedProject === targetProjectId) {
+      setDraggedProject(null);
+      return;
+    }
+
+    const draggedIndex = projects.findIndex(p => p.id === draggedProject);
+    const targetIndex = projects.findIndex(p => p.id === targetProjectId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedProject(null);
+      return;
+    }
+
+    const newProjects = [...projects];
+    const [draggedItem] = newProjects.splice(draggedIndex, 1);
+    newProjects.splice(targetIndex, 0, draggedItem);
+    
+    setProjects(newProjects);
+    setDraggedProject(null);
+    addNotification('success', 'Project order updated');
+  };
+
   const deletePhoto = async (photo: PortfolioPhoto) => {
     if (!confirm('Are you sure you want to delete this photo?')) return;
 
@@ -408,10 +514,34 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
+  const toggleFeatured = async (project: Project) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ featured: !project.featured })
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      await fetchProjects();
+      addNotification('success', `Project ${!project.featured ? 'featured' : 'unfeatured'} successfully`);
+    } catch (error: any) {
+      addNotification('error', 'Failed to update project: ' + error.message);
+    }
+  };
+
   const handleProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
     setProjectData({
       ...projectData,
+      [e.target.name]: value
+    });
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+    setEditFormData({
+      ...editFormData,
       [e.target.name]: value
     });
   };
@@ -843,8 +973,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
             <div className="text-center">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Manage Projects</h2>
               <p className="text-lg text-gray-600">
-                View and manage your existing projects and photos
+                Edit, reorder, and manage your existing projects and photos
               </p>
+              {projects.length > 1 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  💡 Drag projects to reorder them, or use the arrow buttons
+                </p>
+              )}
             </div>
 
             {projects.length === 0 ? (
@@ -860,78 +995,252 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                 </button>
               </div>
             ) : (
-              <div className="grid lg:grid-cols-2 gap-8">
-                {projects.map((project) => {
+              <div className="space-y-6">
+                {projects.map((project, index) => {
                   const projectPhotos = photos.filter(photo => photo.project_id === project.id);
+                  const isEditing = editingProject === project.id;
                   
                   return (
-                    <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div 
+                      key={project.id} 
+                      className={`bg-white rounded-lg shadow-md overflow-hidden transition-all duration-200 ${
+                        draggedProject === project.id ? 'opacity-50 scale-95' : ''
+                      }`}
+                      draggable={!isEditing}
+                      onDragStart={(e) => handleProjectDragStart(e, project.id)}
+                      onDragOver={handleProjectDragOver}
+                      onDrop={(e) => handleProjectDrop(e, project.id)}
+                    >
                       {/* Project Header */}
                       <div className="p-6 border-b border-gray-200">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
-                              {project.featured && (
-                                <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                              )}
-                            </div>
-                            <p className="text-gray-600 mb-3">{project.description}</p>
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="w-4 h-4" />
-                                <span>{project.location}</span>
+                          <div className="flex items-start space-x-4 flex-1">
+                            {/* Drag Handle */}
+                            {!isEditing && projects.length > 1 && (
+                              <div className="flex flex-col space-y-1 pt-1">
+                                <GripVertical className="w-5 h-5 text-gray-400 cursor-move" />
                               </div>
-                              {project.completion_date && (
-                                <div className="flex items-center space-x-1">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{new Date(project.completion_date).toLocaleDateString()}</span>
+                            )}
+                            
+                            <div className="flex-1">
+                              {isEditing ? (
+                                <div className="space-y-4">
+                                  <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Project Title *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        name="title"
+                                        value={editFormData.title}
+                                        onChange={handleEditInputChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Location
+                                      </label>
+                                      <input
+                                        type="text"
+                                        name="location"
+                                        value={editFormData.location}
+                                        onChange={handleEditInputChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Category
+                                      </label>
+                                      <select
+                                        name="category"
+                                        value={editFormData.category}
+                                        onChange={handleEditInputChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      >
+                                        {categories.map((cat) => (
+                                          <option key={cat.value} value={cat.value}>
+                                            {cat.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Completion Date
+                                      </label>
+                                      <input
+                                        type="date"
+                                        name="completion_date"
+                                        value={editFormData.completion_date}
+                                        onChange={handleEditInputChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description
+                                      </label>
+                                      <textarea
+                                        name="description"
+                                        value={editFormData.description}
+                                        onChange={handleEditInputChange}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <label className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          name="featured"
+                                          checked={editFormData.featured}
+                                          onChange={handleEditInputChange}
+                                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm font-medium text-gray-700">Featured Project</span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-3">
+                                    <button
+                                      onClick={() => saveProjectEdit(project.id)}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                                    >
+                                      <Save className="w-4 h-4" />
+                                      <span>Save Changes</span>
+                                    </button>
+                                    <button
+                                      onClick={cancelEditProject}
+                                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
+                                    {project.featured && (
+                                      <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                                    )}
+                                  </div>
+                                  <p className="text-gray-600 mb-3">{project.description}</p>
+                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                    <div className="flex items-center space-x-1">
+                                      <MapPin className="w-4 h-4" />
+                                      <span>{project.location}</span>
+                                    </div>
+                                    {project.completion_date && (
+                                      <div className="flex items-center space-x-1">
+                                        <Calendar className="w-4 h-4" />
+                                        <span>{new Date(project.completion_date).toLocaleDateString()}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center space-x-1">
+                                      <ImageIcon className="w-4 h-4" />
+                                      <span>{projectPhotos.length} photos</span>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
-                              <div className="flex items-center space-x-1">
-                                <ImageIcon className="w-4 h-4" />
-                                <span>{projectPhotos.length} photos</span>
-                              </div>
                             </div>
                           </div>
-                          <button
-                            onClick={() => deleteProject(project)}
-                            className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          
+                          {/* Action Buttons */}
+                          {!isEditing && (
+                            <div className="flex items-center space-x-2">
+                              {/* Reorder Buttons */}
+                              {projects.length > 1 && (
+                                <div className="flex flex-col space-y-1">
+                                  <button
+                                    onClick={() => moveProject(project.id, 'up')}
+                                    disabled={index === 0}
+                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title="Move up"
+                                  >
+                                    <ArrowUp className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => moveProject(project.id, 'down')}
+                                    disabled={index === projects.length - 1}
+                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title="Move down"
+                                  >
+                                    <ArrowDown className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                              
+                              {/* Feature Toggle */}
+                              <button
+                                onClick={() => toggleFeatured(project)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  project.featured 
+                                    ? 'text-yellow-600 hover:bg-yellow-50' 
+                                    : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                                }`}
+                                title={project.featured ? 'Remove from featured' : 'Mark as featured'}
+                              >
+                                <Star className={`w-5 h-5 ${project.featured ? 'fill-current' : ''}`} />
+                              </button>
+                              
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => startEditProject(project)}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit project"
+                              >
+                                <Edit3 className="w-5 h-5" />
+                              </button>
+                              
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => deleteProject(project)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete project"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Project Photos */}
-                      <div className="p-6">
-                        {projectPhotos.length === 0 ? (
-                          <div className="text-center py-8">
-                            <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-gray-500">No photos in this project</p>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {projectPhotos.map((photo) => (
-                              <div key={photo.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                <img
-                                  src={photo.image_url}
-                                  alt={photo.title}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                                  <button
-                                    onClick={() => deletePhoto(photo)}
-                                    className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                      {!isEditing && (
+                        <div className="p-6">
+                          {projectPhotos.length === 0 ? (
+                            <div className="text-center py-8">
+                              <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-500">No photos in this project</p>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                              {projectPhotos.map((photo) => (
+                                <div key={photo.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                  <img
+                                    src={photo.image_url}
+                                    alt={photo.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                    <button
+                                      onClick={() => deletePhoto(photo)}
+                                      className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
