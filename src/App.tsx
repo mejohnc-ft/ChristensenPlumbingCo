@@ -16,7 +16,12 @@ import {
   ThumbsUp,
   ExternalLink,
   AlertTriangle,
-  Upload
+  User,
+  ChevronDown,
+  LogIn,
+  Camera,
+  Settings,
+  LogOut
 } from 'lucide-react';
 import GoogleMap from './components/GoogleMap';
 import GoogleReviews from './components/GoogleReviews';
@@ -44,8 +49,10 @@ function App() {
   const [activeTab, setActiveTab] = useState('services');
   const [showEmergencyPage, setShowEmergencyPage] = useState(false);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,8 +62,62 @@ function App() {
   });
 
   useEffect(() => {
+    // Check auth status
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'photos') {
       fetchProjects();
+    }
+  }, [activeTab]);
+
+  // Real-time subscription for projects
+  useEffect(() => {
+    if (activeTab === 'photos') {
+      // Set up real-time subscription
+      const projectsSubscription = supabase
+        .channel('projects-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'projects' 
+          }, 
+          () => {
+            fetchProjects();
+          }
+        )
+        .subscribe();
+
+      // Set up real-time subscription for photos
+      const photosSubscription = supabase
+        .channel('photos-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'portfolio_photos' 
+          }, 
+          () => {
+            fetchProjects();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        projectsSubscription.unsubscribe();
+        photosSubscription.unsubscribe();
+      };
     }
   }, [activeTab]);
 
@@ -93,6 +154,28 @@ function App() {
       setLoading(false);
     }
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setShowUserDropdown(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('user-dropdown');
+      const button = document.getElementById('user-dropdown-button');
+      
+      if (dropdown && button && 
+          !dropdown.contains(event.target as Node) && 
+          !button.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (showEmergencyPage) {
     return <EmergencyServices onBack={() => setShowEmergencyPage(false)} />;
@@ -215,13 +298,103 @@ function App() {
                 <AlertTriangle className="w-4 h-4" />
                 <span>Emergency Service</span>
               </button>
-              <button 
-                onClick={() => setShowPhotoUpload(true)}
-                className="bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold shadow-md flex items-center space-x-2"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload Photos</span>
-              </button>
+              
+              {/* User Profile Dropdown */}
+              <div className="relative">
+                <button
+                  id="user-dropdown-button"
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold shadow-md"
+                >
+                  <User className="w-4 h-4" />
+                  <span>{user ? 'Admin' : 'Profile'}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserDropdown && (
+                  <div
+                    id="user-dropdown"
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                  >
+                    {user ? (
+                      // Authenticated user menu
+                      <>
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900">Signed in as</p>
+                          <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowPhotoUpload(true);
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span>Photo Upload</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowPhotoUpload(true);
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Project Management</span>
+                        </button>
+                        <div className="border-t border-gray-100 mt-2 pt-2">
+                          <button
+                            onClick={handleLogout}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      // Guest user menu
+                      <>
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-sm text-gray-600">Admin Access</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowPhotoUpload(true);
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <LogIn className="w-4 h-4" />
+                          <span>Admin Login</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowPhotoUpload(true);
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span>Photo Upload</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowPhotoUpload(true);
+                            setShowUserDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Project Management</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
