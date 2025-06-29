@@ -15,6 +15,20 @@ export interface PortfolioPhoto {
   description: string;
   image_url: string;
   category: string;
+  project_id?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  completion_date: string;
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
+  photos?: PortfolioPhoto[];
 }

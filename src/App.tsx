@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Phone, 
   Mail, 
@@ -20,8 +20,10 @@ import {
 } from 'lucide-react';
 import GoogleMap from './components/GoogleMap';
 import GoogleReviews from './components/GoogleReviews';
+import ProjectCarousel from './components/ProjectCarousel';
 import EmergencyServices from './pages/EmergencyServices';
 import PhotoUpload from './pages/PhotoUpload';
+import { supabase, Project } from './lib/supabase';
 
 interface Testimonial {
   name: string;
@@ -42,6 +44,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('services');
   const [showEmergencyPage, setShowEmergencyPage] = useState(false);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,6 +53,46 @@ function App() {
     service: '',
     message: ''
   });
+
+  useEffect(() => {
+    if (activeTab === 'photos') {
+      fetchProjects();
+    }
+  }, [activeTab]);
+
+  const fetchProjects = async () => {
+    setLoading(true);
+    try {
+      // Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (projectsError) throw projectsError;
+
+      // Fetch photos for each project
+      const { data: photosData, error: photosError } = await supabase
+        .from('portfolio_photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (photosError) throw photosError;
+
+      // Group photos by project
+      const projectsWithPhotos = (projectsData || []).map(project => ({
+        ...project,
+        photos: (photosData || []).filter(photo => photo.project_id === project.id)
+      }));
+
+      setProjects(projectsWithPhotos);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (showEmergencyPage) {
     return <EmergencyServices onBack={() => setShowEmergencyPage(false)} />;
@@ -114,15 +158,6 @@ function App() {
       description: "Complete water heater solutions including installation, repair, and maintenance.",
       features: ["Installation", "Repairs", "Maintenance", "Energy Efficient Options"]
     }
-  ];
-
-  const photos = [
-    "https://images.pexels.com/photos/8199204/pexels-photo-8199204.jpeg?auto=compress&cs=tinysrgb&w=600",
-    "https://images.pexels.com/photos/834892/pexels-photo-834892.jpeg?auto=compress&cs=tinysrgb&w=600",
-    "https://images.pexels.com/photos/1855582/pexels-photo-1855582.jpeg?auto=compress&cs=tinysrgb&w=600",
-    "https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=600",
-    "https://images.pexels.com/photos/1358900/pexels-photo-1358900.jpeg?auto=compress&cs=tinysrgb&w=600",
-    "https://images.pexels.com/photos/1234567/pexels-photo-1234567.jpeg?auto=compress&cs=tinysrgb&w=600"
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -197,7 +232,7 @@ function App() {
                 { id: 'services', label: 'Services', icon: <Wrench className="w-4 h-4" /> },
                 { id: 'testimonials', label: 'Reviews', icon: <Quote className="w-4 h-4" /> },
                 { id: 'contact', label: 'Contact', icon: <Mail className="w-4 h-4" /> },
-                { id: 'photos', label: 'Our Work', icon: <Award className="w-4 h-4" /> }
+                { id: 'photos', label: 'Our Projects', icon: <Award className="w-4 h-4" /> }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -465,33 +500,34 @@ function App() {
           </div>
         )}
 
-        {/* Photos Tab */}
+        {/* Photos Tab - Project Carousels */}
         {activeTab === 'photos' && (
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Work Portfolio</h2>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Project Portfolio</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Take a look at some of our recent projects across San Diego County and see the quality craftsmanship that sets us apart.
+                Explore our completed projects across San Diego County. Each carousel showcases the quality craftsmanship and attention to detail that sets us apart.
               </p>
             </div>
             
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {photos.map((photo, index) => (
-                <div key={index} className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-                  <img
-                    src={photo}
-                    alt={`Plumbing work example ${index + 1}`}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <p className="font-bold text-lg">Professional Installation</p>
-                      <p className="text-sm text-gray-200">Quality workmanship guaranteed</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mr-4"></div>
+                <p className="text-gray-600">Loading projects...</p>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-12">
+                <Award className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No projects available yet</p>
+                <p className="text-sm text-gray-500">Check back soon for our latest work</p>
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-2 gap-8">
+                {projects.map((project) => (
+                  <ProjectCarousel key={project.id} project={project} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

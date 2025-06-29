@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase, PortfolioPhoto } from '../lib/supabase';
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus } from 'lucide-react';
+import { supabase, PortfolioPhoto, Project } from '../lib/supabase';
 
 interface PhotoUploadProps {
   onBack: () => void;
@@ -13,13 +13,16 @@ interface Notification {
 }
 
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showNewProject, setShowNewProject] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [selectedProject, setSelectedProject] = useState<string>('');
   const [loginData, setLoginData] = useState({
     email: 'mejohnc@christensenplumbing.com',
     password: ''
@@ -28,6 +31,14 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     title: '',
     description: '',
     category: 'general'
+  });
+  const [newProjectData, setNewProjectData] = useState({
+    title: '',
+    description: '',
+    category: 'general',
+    location: '',
+    completion_date: '',
+    featured: false
   });
 
   const categories = [
@@ -46,6 +57,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        fetchProjects();
         fetchPhotos();
       } else {
         setLoading(false);
@@ -57,6 +69,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        fetchProjects();
         fetchPhotos();
         setShowLogin(false);
       } else {
@@ -101,8 +114,29 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setProjects([]);
     setPhotos([]);
     addNotification('success', 'Successfully logged out');
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+      
+      // Set first project as selected if none selected
+      if (data && data.length > 0 && !selectedProject) {
+        setSelectedProject(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      addNotification('error', 'Failed to load projects');
+    }
   };
 
   const fetchPhotos = async () => {
@@ -122,10 +156,42 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
+  const createProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(newProjectData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchProjects();
+      setSelectedProject(data.id);
+      setNewProjectData({
+        title: '',
+        description: '',
+        category: 'general',
+        location: '',
+        completion_date: '',
+        featured: false
+      });
+      setShowNewProject(false);
+      addNotification('success', 'Project created successfully!');
+    } catch (error: any) {
+      addNotification('error', 'Failed to create project: ' + error.message);
+    }
+  };
+
   const uploadPhoto = async (file: File, index: number) => {
     const fileId = `${Date.now()}-${index}`;
     
     try {
+      if (!selectedProject) {
+        throw new Error('Please select a project first');
+      }
+
       // Update progress
       setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
@@ -155,6 +221,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
           title: formData.title || `Photo ${index + 1}`,
           description: formData.description || '',
           category: formData.category,
+          project_id: selectedProject,
           image_url: publicUrl
         });
 
@@ -210,9 +277,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       try {
         await uploadPhoto(validFiles[i], i);
         successCount++;
-      } catch (error) {
+      } catch (error: any) {
         errorCount++;
-        addNotification('error', `Failed to upload ${validFiles[i].name}`);
+        addNotification('error', `Failed to upload ${validFiles[i].name}: ${error.message}`);
       }
     }
 
@@ -290,12 +357,23 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     });
   };
 
+  const handleNewProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+    setNewProjectData({
+      ...newProjectData,
+      [e.target.name]: value
+    });
+  };
+
   const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoginData({
       ...loginData,
       [e.target.name]: e.target.value
     });
   };
+
+  // Get photos for selected project
+  const selectedProjectPhotos = photos.filter(photo => photo.project_id === selectedProject);
 
   // Notification Component
   const NotificationContainer = () => (
@@ -394,7 +472,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading photos...</p>
+          <p className="text-gray-600">Loading projects and photos...</p>
         </div>
       </div>
     );
@@ -417,9 +495,13 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                 <span>Back to Main Site</span>
               </button>
               <div className="h-6 w-px bg-gray-300"></div>
-              <h1 className="text-2xl font-bold text-gray-900">Portfolio Photo Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Project Portfolio Manager</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <FolderPlus className="w-4 h-4" />
+                <span>{projects.length} projects</span>
+              </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <ImageIcon className="w-4 h-4" />
                 <span>{photos.length} photos</span>
@@ -439,169 +521,319 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Upload Section */}
+        {/* Project Management */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Upload Photos</h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Photo Title Template
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Kitchen Sink Installation (leave empty for auto-naming)"
-                />
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Project Management</h2>
+            <button
+              onClick={() => setShowNewProject(!showNewProject)}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Project</span>
+            </button>
+          </div>
 
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {/* New Project Form */}
+          {showNewProject && (
+            <form onSubmit={createProject} className="bg-gray-50 p-4 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Project</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="project-title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Project Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="project-title"
+                    name="title"
+                    value={newProjectData.title}
+                    onChange={handleNewProjectInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Modern Kitchen Renovation"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="project-location" className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="project-location"
+                    name="location"
+                    value={newProjectData.location}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., La Jolla"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="project-category" className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    id="project-category"
+                    name="category"
+                    value={newProjectData.category}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="project-completion-date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Completion Date
+                  </label>
+                  <input
+                    type="date"
+                    id="project-completion-date"
+                    name="completion_date"
+                    value={newProjectData.completion_date}
+                    onChange={handleNewProjectInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="project-description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="project-description"
+                    name="description"
+                    value={newProjectData.description}
+                    onChange={handleNewProjectInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Brief description of the project..."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="featured"
+                      checked={newProjectData.featured}
+                      onChange={handleNewProjectInputChange}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Featured Project</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex space-x-3 mt-4">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {categories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (Optional)
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Brief description of the work..."
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Photos (Multiple files supported)
-              </label>
-              <div 
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileSelect}
-                  disabled={uploading}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label
-                  htmlFor="photo-upload"
-                  className={`cursor-pointer ${uploading ? 'opacity-50' : ''}`}
+                  Create Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewProject(false)}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
-                  {uploading ? (
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                      <p className="text-sm text-gray-600">Uploading photos...</p>
-                      {Object.keys(uploadProgress).length > 0 && (
-                        <div className="mt-2 w-full max-w-xs">
-                          {Object.entries(uploadProgress).map(([fileId, progress]) => (
-                            <div key={fileId} className="mb-1">
-                              <div className="bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${progress}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">
-                        Click to upload or drag and drop multiple photos
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG, GIF up to 5MB each
-                      </p>
-                    </div>
-                  )}
-                </label>
+                  Cancel
+                </button>
               </div>
-            </div>
+            </form>
+          )}
+
+          {/* Project Selection */}
+          <div>
+            <label htmlFor="project-select" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Project for Photo Upload
+            </label>
+            <select
+              id="project-select"
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Choose a project...</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.title} - {project.location}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Photos Grid */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Portfolio Photos</h2>
-          
-          {photos.length === 0 ? (
-            <div className="text-center py-12">
-              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No photos uploaded yet</p>
-              <p className="text-sm text-gray-500">Upload your first photos to get started</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {photos.map((photo) => (
-                <div key={photo.id} className="group relative bg-gray-50 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-square">
-                    <img
-                      src={photo.image_url}
-                      alt={photo.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                    <button
-                      onClick={() => deletePhoto(photo)}
-                      className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200 transform scale-90 group-hover:scale-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="p-3">
-                    <h3 className="font-medium text-gray-900 text-sm truncate">
-                      {photo.title}
-                    </h3>
-                    <p className="text-xs text-gray-600 capitalize">
-                      {categories.find(cat => cat.value === photo.category)?.label || photo.category}
-                    </p>
-                    {photo.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                        {photo.description}
-                      </p>
-                    )}
-                  </div>
+        {/* Upload Section */}
+        {selectedProject && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Upload Photos to Project</h2>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Photo Title Template
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Kitchen Installation (leave empty for auto-naming)"
+                  />
                 </div>
-              ))}
+
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                    Photo Category
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Brief description of the photos..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Photos (Multiple files supported)
+                </label>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileSelect}
+                    disabled={uploading}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className={`cursor-pointer ${uploading ? 'opacity-50' : ''}`}
+                  >
+                    {uploading ? (
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                        <p className="text-sm text-gray-600">Uploading photos...</p>
+                        {Object.keys(uploadProgress).length > 0 && (
+                          <div className="mt-2 w-full max-w-xs">
+                            {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                              <div key={fileId} className="mb-1">
+                                <div className="bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">
+                          Click to upload or drag and drop multiple photos
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          PNG, JPG, GIF up to 5MB each
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Project Photos Grid */}
+        {selectedProject && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              Project Photos ({selectedProjectPhotos.length})
+            </h2>
+            
+            {selectedProjectPhotos.length === 0 ? (
+              <div className="text-center py-12">
+                <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No photos uploaded for this project yet</p>
+                <p className="text-sm text-gray-500">Upload your first photos to get started</p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {selectedProjectPhotos.map((photo) => (
+                  <div key={photo.id} className="group relative bg-gray-50 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="aspect-square">
+                      <img
+                        src={photo.image_url}
+                        alt={photo.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                      <button
+                        onClick={() => deletePhoto(photo)}
+                        className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-200 transform scale-90 group-hover:scale-100"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="p-3">
+                      <h3 className="font-medium text-gray-900 text-sm truncate">
+                        {photo.title}
+                      </h3>
+                      <p className="text-xs text-gray-600 capitalize">
+                        {categories.find(cat => cat.value === photo.category)?.label || photo.category}
+                      </p>
+                      {photo.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {photo.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
