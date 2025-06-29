@@ -462,7 +462,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     event.target.value = '';
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>, projectId: string) => {
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>, projectId: string) => {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files && files.length > 0) {
@@ -470,7 +470,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     }
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleFileDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
   };
 
@@ -627,8 +627,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
                   </label>
                   <div 
                     className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors"
-                    onDrop={(e) => handleDrop(e, projectId)}
-                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleFileDrop(e, projectId)}
+                    onDragOver={handleFileDragOver}
                   >
                     <input
                       type="file"
