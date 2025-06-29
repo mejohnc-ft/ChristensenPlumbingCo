@@ -15,11 +15,13 @@ import {
   Users,
   ThumbsUp,
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  Upload
 } from 'lucide-react';
 import GoogleMap from './components/GoogleMap';
 import GoogleReviews from './components/GoogleReviews';
 import EmergencyServices from './pages/EmergencyServices';
+import PhotoUpload from './pages/PhotoUpload';
 
 interface Testimonial {
   name: string;
@@ -39,6 +41,7 @@ interface Service {
 function App() {
   const [activeTab, setActiveTab] = useState('services');
   const [showEmergencyPage, setShowEmergencyPage] = useState(false);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,6 +52,10 @@ function App() {
 
   if (showEmergencyPage) {
     return <EmergencyServices onBack={() => setShowEmergencyPage(false)} />;
+  }
+
+  if (showPhotoUpload) {
+    return <PhotoUpload onBack={() => setShowPhotoUpload(false)} />;
   }
 
   const testimonials: Testimonial[] = [
@@ -172,6 +179,13 @@ function App() {
               >
                 <AlertTriangle className="w-4 h-4" />
                 <span>Emergency Service</span>
+              </button>
+              <button 
+                onClick={() => setShowPhotoUpload(true)}
+                className="bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold shadow-md flex items-center space-x-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Photos</span>
               </button>
             </div>
           </div>
