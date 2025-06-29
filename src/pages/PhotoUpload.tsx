@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut } from 'lucide-react';
 import { supabase, PortfolioPhoto } from '../lib/supabase';
 
 interface PhotoUploadProps {
@@ -10,6 +10,12 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginData, setLoginData] = useState({
+    email: 'mejohnc@christensenplumbing.com',
+    password: ''
+  });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,8 +34,51 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   ];
 
   useEffect(() => {
-    fetchPhotos();
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchPhotos();
+      } else {
+        setLoading(false);
+        setShowLogin(true);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchPhotos();
+        setShowLogin(false);
+      } else {
+        setShowLogin(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password
+      });
+      
+      if (error) throw error;
+      
+      setShowLogin(false);
+    } catch (error: any) {
+      alert('Login failed: ' + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setPhotos([]);
+  };
 
   const fetchPhotos = async () => {
     try {
@@ -138,6 +187,75 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     });
   };
 
+  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginData({
+      ...loginData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Login Screen
+  if (showLogin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors mb-8"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Main Site</span>
+            </button>
+            <h2 className="text-3xl font-bold text-gray-900">Photo Upload Login</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Sign in to manage portfolio photos
+            </p>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+            <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={loginData.email}
+                  onChange={handleLoginInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={loginData.password}
+                  onChange={handleLoginInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign in
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -166,9 +284,20 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
               <div className="h-6 w-px bg-gray-300"></div>
               <h1 className="text-2xl font-bold text-gray-900">Portfolio Photo Manager</h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <ImageIcon className="w-4 h-4" />
-              <span>{photos.length} photos</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <ImageIcon className="w-4 h-4" />
+                <span>{photos.length} photos</span>
+              </div>
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
