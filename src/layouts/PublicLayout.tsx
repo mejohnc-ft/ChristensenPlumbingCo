@@ -17,6 +17,7 @@ import {
 import { supabase } from '../lib/supabase';
 import ThemeToggle from '../components/navigation/ThemeToggle';
 import { MainSchemas } from '@/lib/seo';
+import { trackPageView, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
 
 const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
@@ -62,6 +63,7 @@ export default function PublicLayout() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    trackPageView(location.pathname, document.title);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -157,6 +159,7 @@ export default function PublicLayout() {
               {/* Phone */}
               <a
                 href={PHONE_LINK}
+                onClick={() => trackPhoneClick('header')}
                 className={`
                   flex items-center gap-2 font-medium transition-colors
                   ${scrolled || !isHomepage ? 'text-t-text hover:text-gold-500' : 'text-cream-100 hover:text-gold-400'}
@@ -238,6 +241,7 @@ export default function PublicLayout() {
             <div className="flex items-center gap-4 lg:hidden">
               <a
                 href={PHONE_LINK}
+                onClick={() => trackPhoneClick('mobile-header')}
                 className="btn-gold px-4 py-2 text-sm gap-2"
               >
                 <Phone className="w-4 h-4" />
@@ -357,6 +361,7 @@ export default function PublicLayout() {
               </p>
               <a
                 href={PHONE_LINK}
+                onClick={() => trackPhoneClick('footer')}
                 className="inline-flex items-center gap-3 text-gold-400 hover:text-gold-300 transition-colors font-medium"
               >
                 <Phone className="w-5 h-5" />
@@ -406,7 +411,7 @@ export default function PublicLayout() {
             <div className="lg:col-span-3">
               <h4 className="text-sm uppercase tracking-wider text-t-text-muted mb-6">Contact</h4>
               <div className="space-y-4">
-                <a href="mailto:info@christensenplumbing.com" className="flex items-center gap-3 text-t-text-secondary hover:text-gold-400 transition-colors min-w-0">
+                <a href="mailto:info@christensenplumbing.com" onClick={() => trackEmailClick('footer')} className="flex items-center gap-3 text-t-text-secondary hover:text-gold-400 transition-colors min-w-0">
                   <Mail className="w-5 h-5 text-gold-500 flex-shrink-0" />
                   <span className="truncate">info@christensenplumbing.com</span>
                 </a>
@@ -458,7 +463,7 @@ export default function PublicLayout() {
             <p className="text-xs text-t-text-muted">Need help?</p>
             <p className="font-display font-semibold">{PHONE_NUMBER}</p>
           </div>
-          <a href={PHONE_LINK} className="btn-gold px-6 py-3">
+          <a href={PHONE_LINK} onClick={() => trackPhoneClick('sticky-bar')} className="btn-gold px-6 py-3">
             <Phone className="w-5 h-5" />
             <span>Call Now</span>
           </a>

@@ -1,5 +1,6 @@
 import { Phone, Clock, AlertTriangle, Wrench, Droplets, Zap, CheckCircle2 } from 'lucide-react';
 import { PageSEO, EMERGENCY_SEO, FAQSchema } from '@/lib/seo';
+import { trackPhoneClick } from '@/lib/analytics';
 
 const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
@@ -87,6 +88,7 @@ export default function EmergencyPage() {
 
           <a
             href={PHONE_LINK}
+            onClick={() => trackPhoneClick('emergency-hero')}
             className="inline-flex items-center justify-center gap-3 sm:gap-4 bg-navy-900 text-white px-6 py-4 text-lg sm:px-12 sm:py-6 sm:text-2xl font-semibold hover:bg-navy-800 transition-all shadow-2xl"
           >
             <Phone className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -274,6 +276,7 @@ export default function EmergencyPage() {
               </p>
               <a
                 href={PHONE_LINK}
+                onClick={() => trackPhoneClick('emergency-sidebar')}
                 className="flex items-center justify-center gap-3 bg-gold-500 text-white w-full py-5 text-xl font-semibold hover:bg-gold-600 transition-colors mb-6"
               >
                 <Phone className="w-6 h-6" />
@@ -295,6 +298,7 @@ export default function EmergencyPage() {
           </h2>
           <a
             href={PHONE_LINK}
+            onClick={() => trackPhoneClick('emergency-footer-cta')}
             className="inline-flex items-center justify-center gap-3 sm:gap-4 bg-navy-900 text-white px-6 py-4 text-lg sm:px-12 sm:py-6 sm:text-2xl font-semibold hover:bg-navy-800 transition-all"
           >
             <Phone className="w-6 h-6 sm:w-8 sm:h-8" />
