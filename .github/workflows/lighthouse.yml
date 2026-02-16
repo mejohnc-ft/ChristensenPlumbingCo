@@ -41,10 +41,11 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const resultsPath = '.lighthouseci/lhr-*.json';
-            const actionsGlob = require('@actions/glob');
-            const globber = await actionsGlob.create(resultsPath);
-            const files = await globber.glob();
+            const path = require('path');
+            const dir = '.lighthouseci';
+            const files = fs.existsSync(dir)
+              ? fs.readdirSync(dir).filter(f => f.startsWith('lhr-') && f.endsWith('.json')).map(f => path.join(dir, f))
+              : [];
 
             if (files.length > 0) {
               const result = JSON.parse(fs.readFileSync(files[0], 'utf8'));
