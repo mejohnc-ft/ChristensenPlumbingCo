@@ -4,6 +4,17 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create a mock client for development when env vars are missing
+const chainable = () => {
+  const obj: Record<string, unknown> = { data: [], error: null };
+  const proxy = new Proxy(obj, {
+    get(target, prop) {
+      if (prop in target) return target[prop as string];
+      return () => proxy;
+    },
+  });
+  return proxy;
+};
+
 const createMockClient = () => ({
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
@@ -11,11 +22,10 @@ const createMockClient = () => ({
     signOut: () => Promise.resolve({ error: null }),
     signInWithPassword: () => Promise.resolve({ data: { session: null }, error: { message: 'Supabase not configured' } }),
   },
-  from: () => ({
-    select: () => ({ data: [], error: null, order: () => ({ data: [], error: null }) }),
-    insert: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-    update: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-    delete: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+  from: () => chainable(),
+  channel: () => ({
+    on: function() { return this; },
+    subscribe: () => ({ unsubscribe: () => {} }),
   }),
   storage: {
     from: () => ({
