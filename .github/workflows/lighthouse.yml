@@ -1,0 +1,69 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:only
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const resultsPath = '.lighthouseci/lhr-*.json';
+            const glob = require('@actions/glob');
+            const globber = await glob.create(resultsPath);
+            const files = await globber.glob();
+
+            if (files.length > 0) {
+              const result = JSON.parse(fs.readFileSync(files[0], 'utf8'));
+              const scores = result.categories;
+
+              const comment = `## Lighthouse Results
+
+              | Category | Score |
+              |----------|-------|
+              | Performance | ${Math.round(scores.performance.score * 100)} |
+              | Accessibility | ${Math.round(scores.accessibility.score * 100)} |
+              | Best Practices | ${Math.round(scores['best-practices'].score * 100)} |
+              | SEO | ${Math.round(scores.seo.score * 100)} |
+              `;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

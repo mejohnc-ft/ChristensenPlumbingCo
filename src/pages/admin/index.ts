@@ -1,0 +1,10 @@
+export { default as DashboardPage } from './DashboardPage';
+export { default as SettingsPage } from './SettingsPage';
+export { default as PagesPage } from './PagesPage';
+export { default as ProjectsPage } from './ProjectsPage';
+export { default as PhotosPage } from './PhotosPage';
+export { default as ReviewsAdminPage } from './ReviewsPage';
+export { default as TeamPage } from './TeamPage';
+export { default as FaqsPage } from './FaqsPage';
+export { default as LeadsPage } from './LeadsPage';
+export { default as AuditPage } from './AuditPage';

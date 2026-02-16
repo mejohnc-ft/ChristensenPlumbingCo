@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Save, ArrowLeft, Image as ImageIcon, Trash2, LogIn, LogOut, CheckCircle, AlertCircle, Plus, FolderPlus, Edit3, GripVertical, ChevronUp, ChevronDown, Star, Camera, Grid, List } from 'lucide-react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase, PortfolioPhoto, Project } from '../lib/supabase';
 
 interface PhotoUploadProps {
@@ -17,7 +18,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -59,12 +60,41 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
   ];
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const projectsResponse = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (projectsResponse.data) {
+          setProjects(projectsResponse.data);
+          if (projectsResponse.data.length > 0 && !selectedProject) {
+            setSelectedProject(projectsResponse.data[0].id);
+          }
+        }
+
+        const photosResponse = await supabase
+          .from('portfolio_photos')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (photosResponse.data) {
+          setPhotos(photosResponse.data);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        addNotification('error', 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProjects();
-        fetchPhotos();
+        loadData();
       } else {
         setLoading(false);
         setShowLogin(true);
@@ -75,8 +105,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProjects();
-        fetchPhotos();
+        loadData();
         setShowLogin(false);
       } else {
         setShowLogin(true);
@@ -84,6 +113,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     });
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addNotification = (type: 'success' | 'error', message: string) => {
@@ -113,8 +143,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       
       setShowLogin(false);
       addNotification('success', 'Successfully logged in!');
-    } catch (error: any) {
-      addNotification('error', 'Login failed: ' + error.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addNotification('error', 'Login failed: ' + message);
     }
   };
 
@@ -185,8 +216,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       });
       setShowNewProject(false);
       addNotification('success', 'Project created successfully!');
-    } catch (error: any) {
-      addNotification('error', 'Failed to create project: ' + error.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addNotification('error', 'Failed to create project: ' + message);
     }
   };
 
@@ -201,8 +233,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
 
       await fetchProjects();
       addNotification('success', 'Project updated successfully!');
-    } catch (error: any) {
-      addNotification('error', 'Failed to update project: ' + error.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addNotification('error', 'Failed to update project: ' + message);
     }
   };
 
@@ -223,8 +256,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
         setSelectedProject('');
       }
       addNotification('success', 'Project deleted successfully');
-    } catch (error: any) {
-      addNotification('error', 'Failed to delete project: ' + error.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addNotification('error', 'Failed to delete project: ' + message);
     }
   };
 
@@ -240,19 +274,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
     
     setProjects(newProjects);
 
-    // Update database with new order
-    try {
-      const updates = newProjects.map((project, index) => ({
-        id: project.id,
-        updated_at: new Date().toISOString()
-      }));
-
-      // In a real implementation, you might want to add an 'order' column to properly handle ordering
-      addNotification('success', 'Project order updated');
-    } catch (error) {
-      addNotification('error', 'Failed to update project order');
-      await fetchProjects(); // Revert on error
-    }
+    // In a real implementation, you might want to add an 'order' column to properly handle ordering
+    addNotification('success', 'Project order updated');
   };
 
   const toggleFeatured = async (projectId: string, featured: boolean) => {
@@ -401,9 +424,10 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onBack }) => {
       try {
         await uploadPhoto(validFiles[i], i, projectId);
         successCount++;
-      } catch (error: any) {
+      } catch (err) {
         errorCount++;
-        addNotification('error', `Failed to upload ${validFiles[i].name}: ${error.message}`);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        addNotification('error', `Failed to upload ${validFiles[i].name}: ${message}`);
       }
     }
 

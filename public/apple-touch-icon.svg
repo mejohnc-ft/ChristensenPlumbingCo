@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Background square - Copper color #B8860B -->
+  <rect width="180" height="180" fill="#B8860B"/>
+  <!-- Letter C in white, serif style -->
+  <text x="90" y="130" font-family="Georgia, 'Times New Roman', serif" font-size="120" font-weight="600" fill="white" text-anchor="middle">C</text>
+</svg>
