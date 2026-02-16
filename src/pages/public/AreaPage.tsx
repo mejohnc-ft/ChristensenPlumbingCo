@@ -1,5 +1,5 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { Phone, MapPin, ArrowRight, CheckCircle2, Wrench } from 'lucide-react';
+import { Phone, MapPin, CheckCircle2, Wrench } from 'lucide-react';
 import { PageSEO, AreaPlumberSchema } from '@/lib/seo';
 import { getAreaBySlug } from '@/data/areas';
 import { SERVICES } from '@/data/services';
