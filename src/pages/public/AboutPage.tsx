@@ -57,7 +57,7 @@ export default function AboutPage() {
                   Our Story
                 </span>
               </div>
-              <h1 className="font-display text-4xl lg:text-6xl text-t-text tracking-tight mb-6">
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-t-text tracking-tight mb-6">
                 Built on <span className="text-gold-400">Trust</span>,<br />
                 Driven by <span className="text-gold-400">Excellence</span>
               </h1>
@@ -252,14 +252,14 @@ export default function AboutPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href={PHONE_LINK}
-              className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-10 py-5 text-xl font-medium hover:bg-navy-800 transition-colors"
+              className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
             >
               <Phone className="w-6 h-6" />
               <span>Call Now</span>
             </a>
             <a
               href="/reviews"
-              className="inline-flex items-center justify-center gap-2 bg-white text-navy-900 px-10 py-5 text-xl font-medium hover:bg-navy-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white text-navy-900 px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-50 transition-colors"
             >
               <span>Read Reviews</span>
               <ArrowRight className="w-5 h-5" />

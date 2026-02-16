@@ -374,4 +374,34 @@
   .delay-400 { animation-delay: 400ms; }
   .delay-500 { animation-delay: 500ms; }
   .delay-700 { animation-delay: 700ms; }
+
+  /* ========================================
+     SAFE AREA / DEVICE INSETS
+     ======================================== */
+
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ========================================
+     REDUCED MOTION
+     ======================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ========================================
+     MOBILE MENU SCROLL LOCK
+     ======================================== */
+
+  .body-scroll-lock {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
 }

@@ -107,7 +107,7 @@ export default function ReviewsPage() {
                 Testimonials
               </span>
             </div>
-            <h1 className="font-display text-4xl lg:text-6xl text-t-text tracking-tight mb-6">
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-t-text tracking-tight mb-6">
               What Our <span className="text-gold-400">Clients Say</span>
             </h1>
             <p className="text-xl text-t-text-secondary leading-relaxed">
@@ -116,18 +116,18 @@ export default function ReviewsPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-12 pt-12 border-t border-t-card-border max-w-2xl">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 pt-12 border-t border-t-card-border max-w-2xl">
             <div>
-              <div className="font-display text-4xl lg:text-5xl text-gold-400">4.9</div>
-              <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Average Rating</div>
+              <div className="font-display text-3xl sm:text-4xl lg:text-5xl text-gold-400">4.9</div>
+              <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Average Rating</div>
             </div>
             <div>
-              <div className="font-display text-4xl lg:text-5xl text-gold-400">247+</div>
-              <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Reviews</div>
+              <div className="font-display text-3xl sm:text-4xl lg:text-5xl text-gold-400">247+</div>
+              <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Reviews</div>
             </div>
             <div>
-              <div className="font-display text-4xl lg:text-5xl text-gold-400">98%</div>
-              <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Would Recommend</div>
+              <div className="font-display text-3xl sm:text-4xl lg:text-5xl text-gold-400">98%</div>
+              <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Would Recommend</div>
             </div>
           </div>
         </div>
@@ -208,14 +208,14 @@ export default function ReviewsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href={PHONE_LINK}
-              className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-10 py-5 text-xl font-medium hover:bg-navy-800 transition-colors"
+              className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
             >
               <Phone className="w-6 h-6" />
               <span>{PHONE_NUMBER}</span>
             </a>
             <a
               href="/portfolio"
-              className="inline-flex items-center justify-center gap-2 bg-white text-navy-900 px-10 py-5 text-xl font-medium hover:bg-navy-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white text-navy-900 px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-50 transition-colors"
             >
               <span>View Our Work</span>
               <ArrowRight className="w-5 h-5" />

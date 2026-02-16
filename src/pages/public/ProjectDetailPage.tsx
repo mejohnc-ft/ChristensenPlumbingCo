@@ -113,14 +113,14 @@ export default function ProjectDetailPage() {
                   <button
                     onClick={() => setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))}
                     aria-label="Previous photo"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={() => setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))}
                     aria-label="Next photo"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
@@ -184,7 +184,7 @@ export default function ProjectDetailPage() {
           </p>
           <a
             href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-10 py-5 text-xl font-medium hover:bg-navy-800 transition-colors"
+            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
           >
             <Phone className="w-6 h-6" />
             <span>{PHONE_NUMBER}</span>

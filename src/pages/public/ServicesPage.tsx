@@ -46,7 +46,7 @@ export default function ServicesPage() {
                 Our Expertise
               </span>
             </div>
-            <h1 className="font-display text-4xl lg:text-6xl text-t-text tracking-tight mb-6">
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-t-text tracking-tight mb-6">
               Professional <span className="text-gold-400">Plumbing Services</span>
             </h1>
             <p className="text-xl text-t-text-secondary leading-relaxed">
@@ -67,12 +67,12 @@ export default function ServicesPage() {
                 to={`/services/${service.slug}`}
                 className="group bg-t-card border border-t-card-border p-8 lg:p-10 hover:border-gold-500/50 transition-all duration-300"
               >
-                <div className="flex items-start gap-6">
-                  <div className="w-14 h-14 bg-navy-900 text-cream-100 flex items-center justify-center flex-shrink-0 group-hover:bg-gold-500 group-hover:text-white transition-colors">
-                    {SERVICE_ICONS[service.slug] || <Wrench className="w-7 h-7" />}
+                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-navy-900 text-cream-100 flex items-center justify-center flex-shrink-0 group-hover:bg-gold-500 group-hover:text-white transition-colors">
+                    {SERVICE_ICONS[service.slug] || <Wrench className="w-6 h-6 sm:w-7 sm:h-7" />}
                   </div>
                   <div className="flex-1">
-                    <h2 className="font-display text-2xl text-t-text mb-3 group-hover:text-gold-500 transition-colors">
+                    <h2 className="font-display text-xl sm:text-2xl text-t-text mb-3 group-hover:text-gold-500 transition-colors">
                       {service.name}
                     </h2>
                     <p className="text-t-text-secondary leading-relaxed mb-4">
@@ -100,7 +100,7 @@ export default function ServicesPage() {
           </p>
           <a
             href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-10 py-5 text-xl font-medium hover:bg-navy-800 transition-colors"
+            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
           >
             <Phone className="w-6 h-6" />
             <span>{PHONE_NUMBER}</span>
