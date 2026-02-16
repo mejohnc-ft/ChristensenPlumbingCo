@@ -1,88 +1,14 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Award, Phone, ArrowRight } from 'lucide-react';
+import { Phone, ArrowRight } from 'lucide-react';
 import ProjectCarousel from '../../components/ProjectCarousel';
-import { supabase, Project } from '../../lib/supabase';
+import { getProjects } from '../../data/projects';
 import { PageSEO, PORTFOLIO_SEO } from '@/lib/seo';
 
 const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
 
 export default function PortfolioPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    const projectsSubscription = supabase
-      .channel('projects-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'projects',
-        },
-        () => {
-          fetchProjects();
-        }
-      )
-      .subscribe();
-
-    const photosSubscription = supabase
-      .channel('photos-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'portfolio_photos',
-        },
-        () => {
-          fetchProjects();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      projectsSubscription.unsubscribe();
-      photosSubscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchProjects = async () => {
-    setLoading(true);
-    try {
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .order('featured', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      if (projectsError) throw projectsError;
-
-      const { data: photosData, error: photosError } = await supabase
-        .from('portfolio_photos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (photosError) throw photosError;
-
-      const projectsWithPhotos = (projectsData || []).map((project) => ({
-        ...project,
-        photos: (photosData || []).filter((photo) => photo.project_id === project.id),
-      }));
-
-      setProjects(projectsWithPhotos);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const projects = getProjects();
 
   return (
     <div className="bg-t-page">
@@ -112,26 +38,11 @@ export default function PortfolioPage() {
       {/* Projects Grid */}
       <section className="py-20 lg:py-28 bg-t-page">
         <div className="container-editorial">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mr-4"></div>
-              <p className="text-t-text-secondary">Loading projects...</p>
-            </div>
-          ) : projects.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-t-page-alt flex items-center justify-center mx-auto mb-6">
-                <Award className="w-10 h-10 text-t-text-muted" />
-              </div>
-              <h3 className="font-display text-2xl text-t-text mb-2">No Projects Yet</h3>
-              <p className="text-t-text-secondary">Check back soon for our latest work</p>
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-2 gap-8">
-              {projects.map((project) => (
-                <ProjectCarousel key={project.id} project={project} />
-              ))}
-            </div>
-          )}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {projects.map((project) => (
+              <ProjectCarousel key={project.id} project={project} />
+            ))}
+          </div>
         </div>
       </section>
 

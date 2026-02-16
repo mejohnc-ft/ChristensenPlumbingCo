@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Tag, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase, Project } from '../../lib/supabase';
+import { getProjectBySlug } from '../../data/projects';
 import { PageSEO, ProjectSchema } from '@/lib/seo';
 
 const PHONE_NUMBER = '(619) 433-2169';
@@ -9,50 +9,8 @@ const PHONE_LINK = 'tel:+16194332169';
 
 export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
+  const project = slug ? getProjectBySlug(slug) : undefined;
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    if (!slug) return;
-
-    const fetchProject = async () => {
-      setLoading(true);
-      try {
-        const { data: projectData, error: projectError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('slug', slug)
-          .single();
-
-        if (projectError) throw projectError;
-
-        if (projectData) {
-          const { data: photosData } = await supabase
-            .from('portfolio_photos')
-            .select('*')
-            .eq('project_id', projectData.id)
-            .order('created_at', { ascending: true });
-
-          setProject({ ...projectData, photos: photosData || [] });
-        }
-      } catch (error) {
-        console.error('Error fetching project:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="bg-t-page min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
-      </div>
-    );
-  }
 
   if (!project) {
     return (
@@ -89,7 +47,7 @@ export default function ProjectDetailPage() {
             title: project.title,
             description: project.description || '',
             image: currentPhoto?.image_url || '/og-image.jpg',
-            images: photos.map((p) => p.url),
+            images: photos.map((p) => p.image_url),
             dateCompleted: project.created_at,
             category: project.category || 'Plumbing',
             location: project.location || 'San Diego',
