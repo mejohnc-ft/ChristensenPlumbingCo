@@ -87,7 +87,7 @@ export default function HomePage() {
       {/* ============================================
           HERO SECTION - Editorial, Bold
           ============================================ */}
-      <section className="relative min-h-screen bg-t-page-alt overflow-hidden">
+      <section className="relative min-h-screen bg-t-page-alt overflow-x-hidden overflow-y-visible">
         {/* Subtle grid pattern */}
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -98,8 +98,8 @@ export default function HomePage() {
           }}
         />
 
-        {/* Copper accent line - left */}
-        <div className="absolute left-8 lg:left-16 top-0 bottom-0 w-px bg-gold-500/20" />
+        {/* Copper accent line - left (hidden on mobile to avoid overlapping content) */}
+        <div className="hidden lg:block absolute left-16 top-0 bottom-0 w-px bg-gold-500/20" />
 
         {/* Content */}
         <div className="relative container-editorial min-h-screen flex flex-col justify-center py-20 lg:py-32">
@@ -176,18 +176,18 @@ export default function HomePage() {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-8">
+                    <div className="grid grid-cols-3 gap-4 sm:gap-8">
                       <div>
-                        <div className="font-display text-5xl text-gold-400 tracking-tight">20+</div>
-                        <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Years</div>
+                        <div className="font-display text-3xl sm:text-5xl text-gold-400 tracking-tight">20+</div>
+                        <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Years</div>
                       </div>
                       <div>
-                        <div className="font-display text-5xl text-gold-400 tracking-tight">30</div>
-                        <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Min Response</div>
+                        <div className="font-display text-3xl sm:text-5xl text-gold-400 tracking-tight">30</div>
+                        <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Min Response</div>
                       </div>
                       <div>
-                        <div className="font-display text-5xl text-gold-400 tracking-tight">4.9</div>
-                        <div className="text-t-text-muted text-sm uppercase tracking-wider mt-1">Rating</div>
+                        <div className="font-display text-3xl sm:text-5xl text-gold-400 tracking-tight">4.9</div>
+                        <div className="text-t-text-muted text-xs sm:text-sm uppercase tracking-wider mt-1">Rating</div>
                       </div>
                     </div>
 
@@ -210,8 +210,8 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Decorative frame */}
-                <div className="absolute -inset-3 border border-gold-500/20 -z-10" />
+                {/* Decorative frame - hidden on mobile to prevent overflow */}
+                <div className="hidden sm:block absolute -inset-3 border border-gold-500/20 -z-10" />
               </div>
             </div>
           </div>
@@ -265,10 +265,10 @@ export default function HomePage() {
                   </div>
                 )}
 
-                <div className="flex items-start gap-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                   {/* Icon */}
                   <div className={`
-                    w-14 h-14 flex items-center justify-center flex-shrink-0
+                    w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0
                     ${service.isEmergency
                       ? 'bg-gold-500 text-white'
                       : 'bg-navy-900 text-cream-100'
@@ -279,7 +279,7 @@ export default function HomePage() {
 
                   {/* Content */}
                   <div className="flex-1">
-                    <h3 className="font-display text-2xl text-t-text mb-3">
+                    <h3 className="font-display text-xl sm:text-2xl text-t-text mb-3">
                       {service.title}
                     </h3>
                     <p className="text-t-text-secondary mb-6 leading-relaxed">
@@ -287,11 +287,11 @@ export default function HomePage() {
                     </p>
 
                     {/* Features */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       {service.features.map((feature, i) => (
                         <span
                           key={i}
-                          className="text-sm text-t-text-secondary px-3 py-1 bg-t-page-alt border border-t-card-border"
+                          className="text-xs sm:text-sm text-t-text-secondary px-2 py-1 sm:px-3 bg-t-page-alt border border-t-card-border"
                         >
                           {feature}
                         </span>
@@ -412,8 +412,8 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {/* Decorative frame */}
-              <div className="absolute -inset-4 border border-gold-500/20 -z-10" />
+              {/* Decorative frame - hidden on mobile to prevent overflow */}
+              <div className="hidden sm:block absolute -inset-4 border border-gold-500/20 -z-10" />
             </div>
           </div>
         </div>
@@ -435,7 +435,7 @@ export default function HomePage() {
             </div>
             <a
               href={PHONE_LINK}
-              className="btn-gold text-xl px-10 py-5 whitespace-nowrap gap-3"
+              className="btn-gold text-base sm:text-xl px-6 py-4 sm:px-10 sm:py-5 whitespace-nowrap gap-3"
             >
               <Phone className="w-6 h-6" />
               {PHONE_NUMBER}
@@ -619,7 +619,7 @@ export default function HomePage() {
           </p>
           <a
             href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-cream-100 px-10 py-5 text-xl font-medium hover:bg-navy-800 transition-colors"
+            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-cream-100 px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
           >
             <Phone className="w-6 h-6" />
             <span>Call {PHONE_NUMBER}</span>

@@ -77,7 +77,7 @@ export default function EmergencyPage() {
             </span>
           </div>
 
-          <h1 className="font-display text-4xl lg:text-6xl text-white tracking-tight mb-6">
+          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-white tracking-tight mb-6">
             Plumbing Emergency?
           </h1>
           <p className="text-xl text-emergency-100 mb-10 max-w-2xl mx-auto">
@@ -87,9 +87,9 @@ export default function EmergencyPage() {
 
           <a
             href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-4 bg-navy-900 text-white px-12 py-6 text-2xl font-semibold hover:bg-navy-800 transition-all shadow-2xl"
+            className="inline-flex items-center justify-center gap-3 sm:gap-4 bg-navy-900 text-white px-6 py-4 text-lg sm:px-12 sm:py-6 sm:text-2xl font-semibold hover:bg-navy-800 transition-all shadow-2xl"
           >
-            <Phone className="w-8 h-8" />
+            <Phone className="w-6 h-6 sm:w-8 sm:h-8" />
             <span>CALL NOW: {PHONE_NUMBER}</span>
           </a>
 
@@ -144,12 +144,12 @@ export default function EmergencyPage() {
                 key={index}
                 className="bg-t-card border-l-4 border-l-emergency-500 border border-t-card-border p-8"
               >
-                <div className="flex items-start gap-6">
-                  <div className="w-14 h-14 bg-emergency-600 flex items-center justify-center text-white flex-shrink-0">
+                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emergency-600 flex items-center justify-center text-white flex-shrink-0">
                     {service.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-display text-xl text-t-text mb-2">
+                    <h3 className="font-display text-lg sm:text-xl text-t-text mb-2">
                       {service.title}
                     </h3>
                     <p className="text-t-text-secondary mb-4">{service.description}</p>
@@ -295,9 +295,9 @@ export default function EmergencyPage() {
           </h2>
           <a
             href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-4 bg-navy-900 text-white px-12 py-6 text-2xl font-semibold hover:bg-navy-800 transition-all"
+            className="inline-flex items-center justify-center gap-3 sm:gap-4 bg-navy-900 text-white px-6 py-4 text-lg sm:px-12 sm:py-6 sm:text-2xl font-semibold hover:bg-navy-800 transition-all"
           >
-            <Phone className="w-8 h-8" />
+            <Phone className="w-6 h-6 sm:w-8 sm:h-8" />
             <span>{PHONE_NUMBER}</span>
           </a>
         </div>

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Project } from '../lib/supabase';
 
 interface ProjectCarouselProps {
@@ -9,6 +10,8 @@ interface ProjectCarouselProps {
 const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   const photos = project.photos || [];
 
@@ -24,22 +27,40 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
     return () => clearInterval(interval);
   }, [isAutoPlaying, photos.length]);
 
-  const goToPrevious = () => {
+  const pauseAutoPlay = useCallback(() => {
     setIsAutoPlaying(false);
-    setCurrentIndex(currentIndex === 0 ? photos.length - 1 : currentIndex - 1);
     setTimeout(() => setIsAutoPlaying(true), 10000);
+  }, []);
+
+  const goToPrevious = () => {
+    pauseAutoPlay();
+    setCurrentIndex(currentIndex === 0 ? photos.length - 1 : currentIndex - 1);
   };
 
   const goToNext = () => {
-    setIsAutoPlaying(false);
+    pauseAutoPlay();
     setCurrentIndex(currentIndex === photos.length - 1 ? 0 : currentIndex + 1);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
   };
 
   const goToSlide = (index: number) => {
-    setIsAutoPlaying(false);
+    pauseAutoPlay();
     setCurrentIndex(index);
-    setTimeout(() => setIsAutoPlaying(true), 10000);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goToNext();
+      else goToPrevious();
+    }
   };
 
   if (photos.length === 0) {
@@ -76,7 +97,12 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
   return (
     <div className="bg-t-card border border-t-card-border overflow-hidden group hover:border-gold-500/50 transition-colors">
       {/* Image Carousel */}
-      <div className="relative aspect-video overflow-hidden">
+      <div
+        className="relative aspect-video overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
           className="flex transition-transform duration-500 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -95,20 +121,20 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
           ))}
         </div>
 
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows - always visible on mobile, hover on desktop */}
         {photos.length > 1 && (
           <>
             <button
               onClick={goToPrevious}
               aria-label="Previous photo"
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={goToNext}
               aria-label="Next photo"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -117,16 +143,16 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
 
         {/* Slide Indicators */}
         {photos.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3">
             {photos.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
                 aria-label={`Go to photo ${index + 1} of ${photos.length}`}
-                className={`w-2 h-2 transition-all duration-200 ${
+                className={`w-3 h-3 min-w-[44px] min-h-[44px] flex items-center justify-center transition-all duration-200 before:block before:rounded-full before:transition-all ${
                   index === currentIndex
-                    ? 'bg-gold-500 scale-125'
-                    : 'bg-white/60 hover:bg-white/80'
+                    ? 'before:w-3 before:h-3 before:bg-gold-500'
+                    : 'before:w-2 before:h-2 before:bg-white/60 hover:before:bg-white/80'
                 }`}
               />
             ))}
@@ -158,8 +184,8 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
       </div>
 
       {/* Project Information */}
-      <div className="p-6">
-        <h3 className="font-display text-xl text-t-text mb-2">{project.title}</h3>
+      <Link to={`/portfolio/${project.slug || project.id}`} className="block p-6">
+        <h3 className="font-display text-xl text-t-text mb-2 group-hover:text-gold-500 transition-colors">{project.title}</h3>
         <p className="text-t-text-secondary mb-4 leading-relaxed">{project.description}</p>
         <div className="flex items-center justify-between text-sm text-t-text-muted pt-4 border-t border-t-card-border">
           <div className="flex items-center gap-2">
@@ -173,7 +199,7 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
             </div>
           )}
         </div>
-      </div>
+      </Link>
     </div>
   );
 };

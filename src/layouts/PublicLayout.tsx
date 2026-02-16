@@ -64,6 +64,15 @@ export default function PublicLayout() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('body-scroll-lock');
+    } else {
+      document.body.classList.remove('body-scroll-lock');
+    }
+    return () => document.body.classList.remove('body-scroll-lock');
+  }, [mobileMenuOpen]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setShowUserDropdown(false);
@@ -98,7 +107,7 @@ export default function PublicLayout() {
         `}
       >
         <div className="container-editorial">
-          <div className="flex justify-between items-center py-5 xl:py-6">
+          <div className="flex justify-between items-center py-5 lg:py-6">
             {/* Logo */}
             <Link to="/" className="group">
               <div className="flex items-center gap-3">
@@ -122,7 +131,7 @@ export default function PublicLayout() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
@@ -144,7 +153,7 @@ export default function PublicLayout() {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden xl:flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-4 xl:gap-6">
               {/* Phone */}
               <a
                 href={PHONE_LINK}
@@ -226,7 +235,7 @@ export default function PublicLayout() {
             </div>
 
             {/* Mobile Actions */}
-            <div className="flex items-center gap-4 xl:hidden">
+            <div className="flex items-center gap-4 lg:hidden">
               <a
                 href={PHONE_LINK}
                 className="btn-gold px-4 py-2 text-sm gap-2"
@@ -251,7 +260,7 @@ export default function PublicLayout() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="xl:hidden bg-t-header border-t border-t-header-border animate-fade-in">
+          <div className="lg:hidden bg-t-header border-t border-t-header-border animate-fade-in">
             <div className="container-editorial py-6 space-y-4">
               {navItems.map((item) => (
                 <Link
@@ -330,9 +339,9 @@ export default function PublicLayout() {
       <footer className="bg-t-footer text-t-text">
         {/* Main Footer */}
         <div className="container-editorial py-16 lg:py-20">
-          <div className="grid lg:grid-cols-12 gap-12 lg:gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
             {/* Brand Column */}
-            <div className="lg:col-span-5">
+            <div className="md:col-span-2 lg:col-span-5">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 bg-gold-500 flex items-center justify-center">
                   <span className="font-display text-2xl text-white font-semibold">C</span>
@@ -358,7 +367,7 @@ export default function PublicLayout() {
             {/* Links */}
             <div className="lg:col-span-2">
               <h4 className="text-sm uppercase tracking-wider text-t-text-muted mb-6">Services</h4>
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {[
                   { label: 'Emergency Repairs', to: '/services/emergency-plumbing' },
                   { label: 'Drain Cleaning', to: '/services/drain-cleaning' },
@@ -369,7 +378,7 @@ export default function PublicLayout() {
                   <Link
                     key={service.to}
                     to={service.to}
-                    className="block text-t-text-secondary hover:text-gold-400 transition-colors"
+                    className="block py-1.5 text-t-text-secondary hover:text-gold-400 transition-colors"
                   >
                     {service.label}
                   </Link>
@@ -380,12 +389,12 @@ export default function PublicLayout() {
             {/* Company */}
             <div className="lg:col-span-2">
               <h4 className="text-sm uppercase tracking-wider text-t-text-muted mb-6">Company</h4>
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {navItems.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="block text-t-text-secondary hover:text-gold-400 transition-colors"
+                    className="block py-1.5 text-t-text-secondary hover:text-gold-400 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -397,9 +406,9 @@ export default function PublicLayout() {
             <div className="lg:col-span-3">
               <h4 className="text-sm uppercase tracking-wider text-t-text-muted mb-6">Contact</h4>
               <div className="space-y-4">
-                <a href="mailto:info@christensenplumbing.com" className="flex items-center gap-3 text-t-text-secondary hover:text-gold-400 transition-colors">
-                  <Mail className="w-5 h-5 text-gold-500" />
-                  <span>info@christensenplumbing.com</span>
+                <a href="mailto:info@christensenplumbing.com" className="flex items-center gap-3 text-t-text-secondary hover:text-gold-400 transition-colors min-w-0">
+                  <Mail className="w-5 h-5 text-gold-500 flex-shrink-0" />
+                  <span className="truncate">info@christensenplumbing.com</span>
                 </a>
                 <div className="flex items-center gap-3 text-t-text-secondary">
                   <MapPin className="w-5 h-5 text-gold-500" />
@@ -429,11 +438,13 @@ export default function PublicLayout() {
           <div className="container-editorial py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-t-text-muted text-sm">
               <p>&copy; {new Date().getFullYear()} Christensen Plumbing Co. All rights reserved.</p>
-              <div className="flex items-center gap-4">
-                <p>Licensed & Insured &bull; Contractor License #XXXXXX</p>
-                <span>&bull;</span>
-                <Link to="/privacy" className="hover:text-gold-400 transition-colors">Privacy</Link>
-                <Link to="/terms" className="hover:text-gold-400 transition-colors">Terms</Link>
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center">
+                <p>Licensed & Insured</p>
+                <span className="hidden sm:inline">&bull;</span>
+                <div className="flex items-center gap-4">
+                  <Link to="/privacy" className="hover:text-gold-400 transition-colors">Privacy</Link>
+                  <Link to="/terms" className="hover:text-gold-400 transition-colors">Terms</Link>
+                </div>
               </div>
             </div>
           </div>
@@ -441,7 +452,7 @@ export default function PublicLayout() {
       </footer>
 
       {/* Sticky Mobile Call Bar */}
-      <div className="fixed bottom-0 left-0 right-0 xl:hidden z-40 bg-t-footer border-t border-t-footer-border safe-area-pb">
+      <div className="fixed bottom-0 left-0 right-0 lg:hidden z-40 bg-t-footer border-t border-t-footer-border safe-area-pb">
         <div className="flex items-center justify-between p-4">
           <div className="text-t-text">
             <p className="text-xs text-t-text-muted">Need help?</p>
@@ -455,7 +466,7 @@ export default function PublicLayout() {
       </div>
 
       {/* Bottom padding for mobile bar */}
-      <div className="h-20 xl:h-0" />
+      <div className="h-20 lg:h-0" />
     </div>
   );
 }
