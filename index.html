@@ -33,6 +33,19 @@
     <meta property="og:url" content="https://christensenplumbing.com" />
     <meta property="og:image" content="https://christensenplumbing.com/og-image.jpg" />
     
+    <!-- Google Tag Manager -->
+    <script>
+      (function(){
+        var id='GTM-XXXXXXX'; // TODO: Replace with real GTM container ID
+        if(id==='GTM-XXXXXXX')return; // Skip if not configured
+        window.dataLayer=window.dataLayer||[];
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+        var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+        j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+        f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',id);
+      })();
+    </script>
+
     <!-- Google Maps API -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC9yaqzUGykHbNqhdvuJ6ts0ww54Z7t-XY&libraries=places"></script>
 
@@ -42,6 +55,25 @@
     </script>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <!-- Hidden forms for Netlify Forms detection (SPA requires this) -->
+    <form name="contact" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <input type="text" name="service" />
+      <textarea name="message"></textarea>
+    </form>
+    <form name="homepage-contact" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <input type="text" name="service" />
+      <textarea name="message"></textarea>
+    </form>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
