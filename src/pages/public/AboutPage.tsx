@@ -53,7 +53,7 @@ export default function AboutPage() {
             <div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-px w-12 bg-gold-500" />
-                <span className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium">
+                <span className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium">
                   Our Story
                 </span>
               </div>
@@ -156,7 +156,7 @@ export default function AboutPage() {
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="h-px w-12 bg-gold-500" />
-              <span className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium">
+              <span className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium">
                 What We Stand For
               </span>
               <div className="h-px w-12 bg-gold-500" />

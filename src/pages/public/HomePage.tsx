@@ -109,7 +109,7 @@ export default function HomePage() {
               {/* Kicker */}
               <div className="flex items-center gap-4">
                 <div className="h-px w-12 bg-gold-500" />
-                <span className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium">
+                <span className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium">
                   San Diego's Premier Plumbing
                 </span>
               </div>
@@ -328,7 +328,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-px w-12 bg-gold-500" />
-                <span className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium">
+                <span className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium">
                   The Difference
                 </span>
               </div>

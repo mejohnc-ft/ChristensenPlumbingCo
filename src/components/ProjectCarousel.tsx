@@ -86,6 +86,8 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
               <img
                 src={photo.image_url}
                 alt={photo.title}
+                width={800}
+                height={450}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -98,12 +100,14 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
           <>
             <button
               onClick={goToPrevious}
+              aria-label="Previous photo"
               className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={goToNext}
+              aria-label="Next photo"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-navy-900/70 hover:bg-navy-900 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
               <ChevronRight className="w-5 h-5" />
@@ -118,6 +122,7 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
+                aria-label={`Go to photo ${index + 1} of ${photos.length}`}
                 className={`w-2 h-2 transition-all duration-200 ${
                   index === currentIndex
                     ? 'bg-gold-500 scale-125'

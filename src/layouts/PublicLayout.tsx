@@ -173,6 +173,8 @@ export default function PublicLayout() {
                 <button
                   id="user-dropdown-button"
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  aria-label="Account menu"
+                  aria-expanded={showUserDropdown}
                   className={`
                     p-2 transition-colors
                     ${scrolled || !isHomepage ? 'text-t-text-muted hover:text-t-text' : 'text-cream-400 hover:text-cream-100'}
@@ -234,6 +236,8 @@ export default function PublicLayout() {
               </a>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
                 className={`
                   p-2 transition-colors
                   ${scrolled || !isHomepage ? 'text-t-text' : 'text-cream-100'}

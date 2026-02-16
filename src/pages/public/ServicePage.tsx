@@ -47,7 +47,7 @@ export default function ServicePage() {
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-6">
               <div className="h-px w-12 bg-gold-500" />
-              <Link to="/services" className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium hover:text-gold-300 transition-colors">
+              <Link to="/services" className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium hover:text-gold-500 transition-colors">
                 Services
               </Link>
             </div>
@@ -116,6 +116,8 @@ export default function ServicePage() {
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                    aria-expanded={openFaq === index}
+                    aria-controls={`faq-answer-${index}`}
                     className="w-full flex items-center justify-between p-6 text-left"
                   >
                     <span className="font-semibold text-t-text pr-4">{faq.question}</span>
@@ -126,7 +128,7 @@ export default function ServicePage() {
                     />
                   </button>
                   {openFaq === index && (
-                    <div className="px-6 pb-6">
+                    <div id={`faq-answer-${index}`} role="region" className="px-6 pb-6">
                       <p className="text-t-text-secondary leading-relaxed">{faq.answer}</p>
                     </div>
                   )}

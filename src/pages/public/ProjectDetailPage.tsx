@@ -145,6 +145,8 @@ export default function ProjectDetailPage() {
               <img
                 src={currentPhoto?.image_url}
                 alt={currentPhoto?.description || `${project.title} - Photo ${currentPhotoIndex + 1}`}
+                width={1200}
+                height={675}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -152,12 +154,14 @@ export default function ProjectDetailPage() {
                 <>
                   <button
                     onClick={() => setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))}
+                    aria-label="Previous photo"
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={() => setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))}
+                    aria-label="Next photo"
                     className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                   >
                     <ChevronRight className="w-6 h-6" />
@@ -176,6 +180,7 @@ export default function ProjectDetailPage() {
                   <button
                     key={photo.id}
                     onClick={() => setCurrentPhotoIndex(index)}
+                    aria-label={`View photo ${index + 1}`}
                     className={`flex-shrink-0 w-20 h-20 border-2 overflow-hidden ${
                       index === currentPhotoIndex ? 'border-gold-500' : 'border-transparent'
                     }`}
@@ -183,6 +188,8 @@ export default function ProjectDetailPage() {
                     <img
                       src={photo.image_url}
                       alt={photo.description || `Thumbnail ${index + 1}`}
+                      width={80}
+                      height={80}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />

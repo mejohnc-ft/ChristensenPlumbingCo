@@ -104,7 +104,7 @@ export default function FaqPage() {
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-6">
               <div className="h-px w-12 bg-gold-500" />
-              <span className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium">
+              <span className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium">
                 FAQ
               </span>
             </div>
@@ -139,6 +139,8 @@ export default function FaqPage() {
                       >
                         <button
                           onClick={() => setOpenFaq(openFaq === faqKey ? null : faqKey)}
+                          aria-expanded={openFaq === faqKey}
+                          aria-controls={`faq-answer-${faqKey}`}
                           className="w-full flex items-center justify-between p-6 text-left"
                         >
                           <span className="font-semibold text-t-text pr-4">{faq.question}</span>
@@ -149,7 +151,7 @@ export default function FaqPage() {
                           />
                         </button>
                         {openFaq === faqKey && (
-                          <div className="px-6 pb-6">
+                          <div id={`faq-answer-${faqKey}`} role="region" className="px-6 pb-6">
                             <p className="text-t-text-secondary leading-relaxed">{faq.answer}</p>
                           </div>
                         )}

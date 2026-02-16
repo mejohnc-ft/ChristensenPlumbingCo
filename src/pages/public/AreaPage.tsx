@@ -42,7 +42,7 @@ export default function AreaPage() {
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-6">
               <div className="h-px w-12 bg-gold-500" />
-              <Link to="/areas" className="text-gold-400 text-sm tracking-[0.2em] uppercase font-medium hover:text-gold-300 transition-colors">
+              <Link to="/areas" className="text-gold-600 text-sm tracking-[0.2em] uppercase font-medium hover:text-gold-500 transition-colors">
                 Service Areas
               </Link>
             </div>
