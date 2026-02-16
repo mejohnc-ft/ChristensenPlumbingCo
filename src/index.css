@@ -1,3 +1,377 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ========================================
+   THEME CSS CUSTOM PROPERTIES
+   ======================================== */
+
+:root,
+[data-theme="light"] {
+  --t-page: 255 255 255;
+  --t-page-alt: 250 247 242;
+  --t-card: 255 255 255;
+  --t-card-border: 217 226 236;
+  --t-text: 11 29 51;
+  --t-text-secondary: 44 74 110;
+  --t-text-muted: 107 139 174;
+  --t-header: 255 255 255;
+  --t-header-border: 217 226 236;
+  --t-footer: 11 29 51;
+  --t-footer-border: 21 46 77;
+}
+
+[data-theme="dark-blue"] {
+  --t-page: 11 29 51;
+  --t-page-alt: 21 46 77;
+  --t-card: 21 46 77;
+  --t-card-border: 30 58 95;
+  --t-text: 250 247 242;
+  --t-text-secondary: 235 228 216;
+  --t-text-muted: 217 207 191;
+  --t-header: 11 29 51;
+  --t-header-border: 30 58 95;
+  --t-footer: 6 16 30;
+  --t-footer-border: 21 46 77;
+}
+
+[data-theme="dark"] {
+  --t-page: 10 10 10;
+  --t-page-alt: 20 20 20;
+  --t-card: 26 26 26;
+  --t-card-border: 42 42 42;
+  --t-text: 240 236 228;
+  --t-text-secondary: 200 192 180;
+  --t-text-muted: 138 132 120;
+  --t-header: 10 10 10;
+  --t-header-border: 42 42 42;
+  --t-footer: 5 5 5;
+  --t-footer-border: 26 26 26;
+}
+
+@layer base {
+  /* Apply heritage typography globally */
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom selection */
+  ::selection {
+    background-color: theme('colors.gold.500');
+    color: white;
+  }
+
+  /* Editorial focus states */
+  *:focus-visible {
+    outline: 2px solid theme('colors.gold.500');
+    outline-offset: 3px;
+  }
+
+  /* Base body styling */
+  body {
+    background-color: rgb(var(--t-page));
+    color: rgb(var(--t-text));
+  }
+}
+
+@layer components {
+  /* ========================================
+     HERITAGE BUTTONS
+     ======================================== */
+
+  .btn-gold {
+    @apply relative inline-flex items-center justify-center;
+    @apply bg-gold-500 text-white font-medium;
+    @apply px-8 py-4 rounded;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-gold-600;
+    @apply shadow-gold hover:shadow-gold-hover;
+    @apply active:scale-[0.98];
+  }
+
+  .btn-gold-outline {
+    @apply relative inline-flex items-center justify-center;
+    @apply bg-transparent text-gold-500 font-medium;
+    @apply px-8 py-4 rounded;
+    @apply border-2 border-gold-500;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-gold-500 hover:text-white;
+    @apply active:scale-[0.98];
+  }
+
+  .btn-navy {
+    @apply relative inline-flex items-center justify-center;
+    @apply bg-navy-900 text-cream-100 font-medium;
+    @apply px-8 py-4 rounded;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-navy-800;
+    @apply active:scale-[0.98];
+  }
+
+  .btn-navy-outline {
+    @apply relative inline-flex items-center justify-center;
+    @apply bg-transparent text-navy-900 font-medium;
+    @apply px-8 py-4 rounded;
+    @apply border-2 border-navy-900;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-navy-900 hover:text-cream-100;
+    @apply active:scale-[0.98];
+  }
+
+  .btn-emergency {
+    @apply relative inline-flex items-center justify-center;
+    @apply bg-emergency-600 text-white font-medium;
+    @apply px-8 py-4 rounded;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-emergency-700;
+    @apply active:scale-[0.98];
+  }
+
+  /* ========================================
+     EDITORIAL TYPOGRAPHY
+     ======================================== */
+
+  .heading-editorial {
+    @apply font-display font-semibold tracking-tight;
+    @apply text-t-text;
+  }
+
+  .heading-editorial-light {
+    @apply font-display font-semibold tracking-tight;
+    @apply text-t-text;
+  }
+
+  .subheading {
+    @apply font-body text-lg text-t-text-secondary;
+    @apply tracking-wide uppercase;
+    @apply mb-4;
+  }
+
+  .subheading-gold {
+    @apply font-body text-sm text-gold-500;
+    @apply tracking-[0.2em] uppercase font-medium;
+    @apply mb-4;
+  }
+
+  /* ========================================
+     HERITAGE CARDS
+     ======================================== */
+
+  .card-editorial {
+    @apply bg-t-card rounded;
+    @apply border border-t-card-border;
+    @apply transition-all duration-500 ease-out;
+    @apply hover:shadow-card-hover;
+  }
+
+  .card-dark {
+    @apply bg-t-card rounded;
+    @apply border border-t-card-border;
+    @apply transition-all duration-500 ease-out;
+  }
+
+  .card-gold-border {
+    @apply bg-t-card rounded;
+    @apply border-l-4 border-l-gold-500 border border-t-card-border;
+  }
+
+  /* ========================================
+     DECORATIVE ELEMENTS
+     ======================================== */
+
+  .line-gold {
+    @apply h-px bg-gold-500;
+  }
+
+  .line-gold-thick {
+    @apply h-1 w-16 bg-gold-500;
+  }
+
+  .line-navy {
+    @apply h-px bg-navy-200;
+  }
+
+  .divider-gold {
+    @apply w-24 h-0.5 bg-gold-500 mx-auto;
+  }
+
+  .accent-line {
+    @apply absolute w-px h-full bg-gold-500/30;
+  }
+
+  /* Vertical accent bar */
+  .accent-bar {
+    @apply w-1 bg-gold-500 rounded-full;
+  }
+
+  /* ========================================
+     SECTION LAYOUTS
+     ======================================== */
+
+  .section-dark {
+    @apply bg-t-page-alt text-t-text;
+  }
+
+  .section-cream {
+    @apply bg-t-page-alt;
+  }
+
+  .section-white {
+    @apply bg-t-page;
+  }
+
+  .container-editorial {
+    @apply max-w-7xl mx-auto px-6 lg:px-12;
+  }
+
+  /* ========================================
+     FORM STYLES - HERITAGE
+     ======================================== */
+
+  .input-editorial {
+    @apply w-full px-4 py-4;
+    @apply bg-t-card border border-t-card-border rounded;
+    @apply text-t-text placeholder:text-t-text-muted;
+    @apply transition-all duration-300;
+    @apply focus:border-gold-500 focus:ring-1 focus:ring-gold-500;
+    @apply focus:outline-none;
+  }
+
+  .input-dark {
+    @apply w-full px-4 py-4;
+    @apply bg-t-card border border-t-card-border rounded;
+    @apply text-t-text placeholder:text-t-text-muted;
+    @apply transition-all duration-300;
+    @apply focus:border-gold-500 focus:ring-1 focus:ring-gold-500;
+    @apply focus:outline-none;
+  }
+
+  .label-editorial {
+    @apply block text-sm font-medium text-t-text-secondary mb-2;
+    @apply tracking-wide;
+  }
+
+  /* ========================================
+     TRUST INDICATORS
+     ======================================== */
+
+  .badge-gold {
+    @apply inline-flex items-center gap-2;
+    @apply px-4 py-2 rounded-full;
+    @apply bg-gold-50 text-gold-700;
+    @apply text-sm font-medium;
+    @apply border border-gold-200;
+  }
+
+  .badge-navy {
+    @apply inline-flex items-center gap-2;
+    @apply px-4 py-2 rounded-full;
+    @apply bg-navy-100 text-navy-700;
+    @apply text-sm font-medium;
+  }
+
+  .badge-outline {
+    @apply inline-flex items-center gap-2;
+    @apply px-4 py-2 rounded-full;
+    @apply border border-navy-300 text-navy-600;
+    @apply text-sm font-medium;
+  }
+
+  /* ========================================
+     NAVIGATION
+     ======================================== */
+
+  .nav-link {
+    @apply text-t-text-secondary font-medium;
+    @apply transition-colors duration-300;
+    @apply hover:text-gold-500;
+    @apply relative;
+  }
+
+  .nav-link-light {
+    @apply text-t-text-secondary font-medium;
+    @apply transition-colors duration-300;
+    @apply hover:text-gold-400;
+    @apply relative;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5;
+    @apply bg-gold-500;
+    @apply transition-all duration-300;
+  }
+
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  /* ========================================
+     STAT DISPLAYS
+     ======================================== */
+
+  .stat-number {
+    @apply font-display text-5xl lg:text-6xl font-semibold;
+    @apply text-gold-500;
+    @apply tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm uppercase tracking-[0.15em];
+    @apply text-t-text-muted font-medium;
+    @apply mt-2;
+  }
+
+  /* ========================================
+     IMAGE TREATMENTS
+     ======================================== */
+
+  .img-editorial {
+    @apply rounded;
+    @apply transition-transform duration-700 ease-out;
+    @apply hover:scale-[1.02];
+  }
+
+  .img-frame {
+    @apply relative;
+  }
+
+  .img-frame::before {
+    content: '';
+    @apply absolute -inset-3;
+    @apply border border-gold-500/30;
+    @apply rounded pointer-events-none;
+  }
+
+  /* ========================================
+     UTILITY CLASSES
+     ======================================== */
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Animation delays */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+  .delay-700 { animation-delay: 700ms; }
+}
