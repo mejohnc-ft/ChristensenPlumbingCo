@@ -98,7 +98,7 @@ export default function PublicLayout() {
         `}
       >
         <div className="container-editorial">
-          <div className="flex justify-between items-center py-5 lg:py-6">
+          <div className="flex justify-between items-center py-5 xl:py-6">
             {/* Logo */}
             <Link to="/" className="group">
               <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ export default function PublicLayout() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8">
+            <nav className="hidden xl:flex items-center gap-8">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
@@ -144,7 +144,7 @@ export default function PublicLayout() {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-6">
+            <div className="hidden xl:flex items-center gap-6">
               {/* Phone */}
               <a
                 href={PHONE_LINK}
@@ -226,7 +226,7 @@ export default function PublicLayout() {
             </div>
 
             {/* Mobile Actions */}
-            <div className="flex items-center gap-4 lg:hidden">
+            <div className="flex items-center gap-4 xl:hidden">
               <a
                 href={PHONE_LINK}
                 className="btn-gold px-4 py-2 text-sm gap-2"
@@ -251,7 +251,7 @@ export default function PublicLayout() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-t-header border-t border-t-header-border animate-fade-in">
+          <div className="xl:hidden bg-t-header border-t border-t-header-border animate-fade-in">
             <div className="container-editorial py-6 space-y-4">
               {navItems.map((item) => (
                 <Link
@@ -441,7 +441,7 @@ export default function PublicLayout() {
       </footer>
 
       {/* Sticky Mobile Call Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:hidden z-40 bg-t-footer border-t border-t-footer-border safe-area-pb">
+      <div className="fixed bottom-0 left-0 right-0 xl:hidden z-40 bg-t-footer border-t border-t-footer-border safe-area-pb">
         <div className="flex items-center justify-between p-4">
           <div className="text-t-text">
             <p className="text-xs text-t-text-muted">Need help?</p>
@@ -455,7 +455,7 @@ export default function PublicLayout() {
       </div>
 
       {/* Bottom padding for mobile bar */}
-      <div className="h-20 lg:h-0" />
+      <div className="h-20 xl:h-0" />
     </div>
   );
 }
