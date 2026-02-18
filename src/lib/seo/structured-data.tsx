@@ -795,6 +795,67 @@ export function HowToSchema({ name, description, steps }: HowToSchemaProps): Rea
   return <JsonLd data={schema} />;
 }
 
+/**
+ * BlogPosting Schema Props
+ */
+export interface BlogPostingSchemaProps {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName?: string;
+  image?: string;
+  tags?: string[];
+}
+
+/**
+ * BlogPosting Schema
+ *
+ * For individual blog post pages. Enables article rich results.
+ */
+export function BlogPostingSchema({
+  title,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  authorName = 'Christensen Plumbing',
+  image,
+  tags,
+}: BlogPostingSchemaProps): React.ReactElement {
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    url: url.startsWith('http') ? url : buildCanonicalUrl(url),
+    datePublished,
+    dateModified: dateModified || datePublished,
+    author: {
+      '@type': 'Person',
+      name: authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SEO_DEFAULTS.siteName,
+      logo: {
+        '@type': 'ImageObject',
+        url: SEO_DEFAULTS.logoUrl,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': url.startsWith('http') ? url : buildCanonicalUrl(url),
+    },
+  };
+
+  if (image) schema.image = image;
+  if (tags?.length) schema.keywords = tags.join(', ');
+
+  return <JsonLd data={schema} />;
+}
+
 export function SingleServiceSchema({
   name,
   description,

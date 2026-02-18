@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import {
   Phone,
   Mail,
@@ -14,7 +14,6 @@ import {
   Clock,
   ArrowRight,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import ThemeToggle from '../components/navigation/ThemeToggle';
 import { MainSchemas } from '@/lib/seo';
 import { trackPageView, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
@@ -25,21 +24,10 @@ const PHONE_LINK = 'tel:+16194332169';
 export default function PublicLayout() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,7 +64,7 @@ export default function PublicLayout() {
   }, [mobileMenuOpen]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     setShowUserDropdown(false);
   };
 
@@ -86,6 +74,7 @@ export default function PublicLayout() {
     { to: '/portfolio', label: 'Our Work' },
     { to: '/reviews', label: 'Reviews' },
     { to: '/about', label: 'About' },
+    { to: '/blog', label: 'Blog' },
   ];
 
   const isActive = (path: string) => {
@@ -200,11 +189,11 @@ export default function PublicLayout() {
                     id="user-dropdown"
                     className="absolute right-0 mt-2 w-56 bg-t-card border border-t-card-border py-2 z-50 animate-fade-in"
                   >
-                    {user ? (
+                    {isSignedIn ? (
                       <>
                         <div className="px-4 py-2 border-b border-t-card-border">
                           <p className="text-xs text-t-text-muted">Signed in as</p>
-                          <p className="text-sm font-medium text-t-text truncate">{user.email}</p>
+                          <p className="text-sm font-medium text-t-text truncate">{user?.primaryEmailAddress?.emailAddress}</p>
                         </div>
                         <Link
                           to="/admin"
@@ -296,7 +285,7 @@ export default function PublicLayout() {
                   24/7 Emergency Service
                 </Link>
 
-                {user ? (
+                {isSignedIn ? (
                   <>
                     <Link
                       to="/admin"

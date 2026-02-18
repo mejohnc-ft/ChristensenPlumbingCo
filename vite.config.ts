@@ -56,6 +56,8 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           ui: ['lucide-react', 'framer-motion'],
+          clerk: ['@clerk/clerk-react'],
+          markdown: ['react-markdown', 'remark-gfm'],
         },
       },
     },

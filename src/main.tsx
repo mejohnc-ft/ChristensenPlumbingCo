@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
+import { ClerkProvider } from '@clerk/clerk-react';
 import { router } from './routes/router';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeBaseMeta } from './lib/seo';
@@ -9,13 +10,24 @@ import './index.css';
 // Initialize base meta tags
 initializeBaseMeta();
 
-// Render the app
-createRoot(document.getElementById('root')!).render(
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+
+const app = (
   <StrictMode>
     <ThemeProvider>
       <RouterProvider router={router} />
     </ThemeProvider>
   </StrictMode>
+);
+
+createRoot(document.getElementById('root')!).render(
+  clerkPubKey ? (
+    <ClerkProvider publishableKey={clerkPubKey}>
+      {app}
+    </ClerkProvider>
+  ) : (
+    app
+  )
 );
 
 // Dispatch render-complete event for prerendering

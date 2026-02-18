@@ -16,12 +16,6 @@ const chainable = () => {
 };
 
 const createMockClient = () => ({
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signOut: () => Promise.resolve({ error: null }),
-    signInWithPassword: () => Promise.resolve({ data: { session: null }, error: { message: 'Supabase not configured' } }),
-  },
   from: () => chainable(),
   channel: () => ({
     on: function() { return this; },
@@ -42,27 +36,5 @@ export const supabase: SupabaseClient | ReturnType<typeof createMockClient> =
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-export interface PortfolioPhoto {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  category: string;
-  project_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  slug?: string;
-  description: string;
-  category: string;
-  location: string;
-  completion_date: string;
-  featured: boolean;
-  created_at: string;
-  updated_at: string;
-  photos?: PortfolioPhoto[];
-}
+// Re-export types from central types file for backward compatibility
+export type { Project, PortfolioPhoto } from '@/types/admin';

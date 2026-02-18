@@ -85,6 +85,7 @@ export {
   MainSchemas,
   AreaPlumberSchema,
   HowToSchema,
+  BlogPostingSchema,
 } from './structured-data';
 
 export type {
@@ -105,6 +106,7 @@ export type {
   AreaPlumberSchemaProps,
   HowToStep,
   HowToSchemaProps,
+  BlogPostingSchemaProps,
 } from './structured-data';
 
 // Page SEO component (combines meta + schemas)
