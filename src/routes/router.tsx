@@ -18,6 +18,8 @@ const FaqPage = lazy(() => import('../pages/public/FaqPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 const PrivacyPolicyPage = lazy(() => import('../pages/public/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('../pages/public/TermsOfServicePage'));
+const BlogPage = lazy(() => import('../pages/public/BlogPage'));
+const BlogPostPage = lazy(() => import('../pages/public/BlogPostPage'));
 
 // Lazy-loaded admin pages
 const AdminLayout = lazy(() => import('../layouts/AdminLayout'));
@@ -31,6 +33,8 @@ const TeamPage = lazy(() => import('../pages/admin/TeamPage'));
 const FaqsPage = lazy(() => import('../pages/admin/FaqsPage'));
 const LeadsPage = lazy(() => import('../pages/admin/LeadsPage'));
 const AuditPage = lazy(() => import('../pages/admin/AuditPage'));
+const AdminBlogPage = lazy(() => import('../pages/admin/BlogPage'));
+const BlogEditorPage = lazy(() => import('../pages/admin/BlogEditorPage'));
 
 function PageLoader() {
   return (
@@ -62,6 +66,8 @@ export const router = createBrowserRouter([
       { path: '/contact', element: <SuspenseWrapper><ContactPage /></SuspenseWrapper> },
       { path: '/privacy', element: <SuspenseWrapper><PrivacyPolicyPage /></SuspenseWrapper> },
       { path: '/terms', element: <SuspenseWrapper><TermsOfServicePage /></SuspenseWrapper> },
+      { path: '/blog', element: <SuspenseWrapper><BlogPage /></SuspenseWrapper> },
+      { path: '/blog/:slug', element: <SuspenseWrapper><BlogPostPage /></SuspenseWrapper> },
     ],
   },
   {
@@ -84,6 +90,9 @@ export const router = createBrowserRouter([
       { path: 'faqs', element: <SuspenseWrapper><FaqsPage /></SuspenseWrapper> },
       { path: 'leads', element: <SuspenseWrapper><LeadsPage /></SuspenseWrapper> },
       { path: 'audit', element: <SuspenseWrapper><AuditPage /></SuspenseWrapper> },
+      { path: 'blog', element: <SuspenseWrapper><AdminBlogPage /></SuspenseWrapper> },
+      { path: 'blog/new', element: <SuspenseWrapper><BlogEditorPage /></SuspenseWrapper> },
+      { path: 'blog/:id/edit', element: <SuspenseWrapper><BlogEditorPage /></SuspenseWrapper> },
     ],
   },
 ]);

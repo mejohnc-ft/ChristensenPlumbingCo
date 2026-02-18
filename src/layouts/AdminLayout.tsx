@@ -18,9 +18,9 @@ import {
   Home,
   Menu,
   X,
-  User,
+  BookOpen,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useClerk, UserButton } from '@clerk/clerk-react';
 
 interface NavItem {
   to: string;
@@ -33,6 +33,7 @@ export default function AdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut } = useClerk();
 
   const navItems: NavItem[] = [
     { to: '/admin', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -44,6 +45,7 @@ export default function AdminLayout() {
     { to: '/admin/team', label: 'Team', icon: <Users className="w-5 h-5" /> },
     { to: '/admin/faqs', label: 'FAQs', icon: <HelpCircle className="w-5 h-5" /> },
     { to: '/admin/leads', label: 'Leads', icon: <MessageSquare className="w-5 h-5" /> },
+    { to: '/admin/blog', label: 'Blog', icon: <BookOpen className="w-5 h-5" /> },
     { to: '/admin/audit', label: 'Audit Log', icon: <ClipboardList className="w-5 h-5" /> },
   ];
 
@@ -55,7 +57,7 @@ export default function AdminLayout() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/');
   };
 
@@ -264,14 +266,8 @@ export default function AdminLayout() {
                 </nav>
               </div>
 
-              {/* User Info Placeholder for Clerk */}
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <span className="hidden sm:inline">Admin User</span>
-                </div>
+                <UserButton afterSignOutUrl="/" />
               </div>
             </div>
           </div>

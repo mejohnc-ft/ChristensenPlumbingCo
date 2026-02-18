@@ -1,19 +1,88 @@
-import { Settings, Save, Globe, Phone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Save } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
+import LoadingState from '@/components/admin/LoadingState';
+import ErrorState from '@/components/admin/ErrorState';
+
+interface FormFields {
+  businessName: string;
+  tagline: string;
+  aboutDescription: string;
+  phone: string;
+  email: string;
+  serviceArea: string;
+  businessHours: string;
+}
 
 export default function SettingsPage() {
+  const { settings, loading, error, refresh, bulkUpdate, getSetting } = useSettings();
+
+  const [form, setForm] = useState<FormFields>({
+    businessName: '',
+    tagline: '',
+    aboutDescription: '',
+    phone: '',
+    email: '',
+    serviceArea: '',
+    businessHours: '',
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      businessName: (getSetting('business_name') as string) ?? '',
+      tagline: (getSetting('tagline') as string) ?? '',
+      aboutDescription: (getSetting('about_description') as string) ?? '',
+      phone: (getSetting('phone') as string) ?? '',
+      email: (getSetting('email') as string) ?? '',
+      serviceArea: (getSetting('service_area') as string) ?? '',
+      businessHours: (getSetting('business_hours') as string) ?? '',
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await bulkUpdate([
+        { key: 'business_name', value: form.businessName, category: 'business' },
+        { key: 'tagline', value: form.tagline, category: 'business' },
+        { key: 'about_description', value: form.aboutDescription, category: 'business' },
+        { key: 'phone', value: form.phone, category: 'contact' },
+        { key: 'email', value: form.email, category: 'contact' },
+        { key: 'service_area', value: form.serviceArea, category: 'contact' },
+        { key: 'business_hours', value: form.businessHours, category: 'contact' },
+      ]);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingState message="Loading settings..." />;
+  if (error) return <ErrorState message={error} onRetry={refresh} />;
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your website settings and configuration.</p>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+          <Settings className="w-6 h-6 text-blue-600" />
+          <span>Site Settings</span>
+        </h1>
+        <p className="text-gray-600 mt-1">Manage your website settings and configuration.</p>
       </div>
 
       {/* Business Information */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-          <Globe className="w-5 h-5 text-blue-600" />
-          <span>Business Information</span>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Business Information
         </h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -22,7 +91,9 @@ export default function SettingsPage() {
             </label>
             <input
               type="text"
-              defaultValue="Christensen Plumbing Co."
+              name="businessName"
+              value={form.businessName}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -32,7 +103,9 @@ export default function SettingsPage() {
             </label>
             <input
               type="text"
-              defaultValue="Licensed & Insured - Serving San Diego County"
+              name="tagline"
+              value={form.tagline}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -41,8 +114,10 @@ export default function SettingsPage() {
               About Description
             </label>
             <textarea
+              name="aboutDescription"
+              value={form.aboutDescription}
+              onChange={handleChange}
               rows={4}
-              defaultValue="Professional plumbing services across San Diego County with a commitment to excellence and customer satisfaction since 2003."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -51,9 +126,8 @@ export default function SettingsPage() {
 
       {/* Contact Information */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-          <Phone className="w-5 h-5 text-blue-600" />
-          <span>Contact Information</span>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Contact Information
         </h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -62,7 +136,9 @@ export default function SettingsPage() {
             </label>
             <input
               type="tel"
-              defaultValue="(619) 433-2169"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -72,7 +148,9 @@ export default function SettingsPage() {
             </label>
             <input
               type="email"
-              defaultValue="info@christensenplumbing.com"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -82,7 +160,9 @@ export default function SettingsPage() {
             </label>
             <input
               type="text"
-              defaultValue="San Diego County"
+              name="serviceArea"
+              value={form.serviceArea}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -92,30 +172,24 @@ export default function SettingsPage() {
             </label>
             <input
               type="text"
-              defaultValue="Mon-Fri: 6AM-8PM"
+              name="businessHours"
+              value={form.businessHours}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
       </div>
 
-      {/* Coming Soon Notice */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 text-center">
-        <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Full Settings Coming Soon
-        </h3>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Additional settings including SEO configuration, social media links, and
-          notification preferences will be available soon.
-        </p>
-      </div>
-
       {/* Save Button */}
       <div className="flex justify-end">
-        <button className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Save className="w-5 h-5" />
-          <span>Save Changes</span>
+          <span>{saving ? 'Saving...' : 'Save Changes'}</span>
         </button>
       </div>
     </div>
