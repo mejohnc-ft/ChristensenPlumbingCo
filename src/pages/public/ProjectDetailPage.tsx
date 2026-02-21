@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Tag, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getProjectBySlug } from '../../data/projects';
 import { PageSEO, ProjectSchema } from '@/lib/seo';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
@@ -100,11 +101,12 @@ export default function ProjectDetailPage() {
           <div className="container-editorial">
             {/* Main Photo */}
             <div className="relative aspect-video bg-t-page-alt border border-t-card-border overflow-hidden mb-4">
-              <img
-                src={currentPhoto?.image_url}
+              <OptimizedImage
+                src={currentPhoto?.image_url || ''}
                 alt={currentPhoto?.description || `${project.title} - Photo ${currentPhotoIndex + 1}`}
                 width={1200}
                 height={675}
+                sizes="(max-width: 1024px) 100vw, 1200px"
                 className="w-full h-full object-cover"
                 loading="lazy"
               />

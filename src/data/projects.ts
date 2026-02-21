@@ -1,4 +1,4 @@
-import type { Project, PortfolioPhoto } from '../lib/supabase';
+import type { Project, PortfolioPhoto } from '@/types/admin';
 
 const photo = (
   id: string,
