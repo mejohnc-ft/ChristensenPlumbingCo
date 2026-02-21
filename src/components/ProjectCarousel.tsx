@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Project } from '../lib/supabase';
+import type { Project } from '@/types/admin';
+import OptimizedImage from './ui/OptimizedImage';
 
 interface ProjectCarouselProps {
   project: Project;
@@ -109,7 +110,7 @@ const ProjectCarousel: React.FC<ProjectCarouselProps> = ({ project }) => {
         >
           {photos.map((photo) => (
             <div key={photo.id} className="w-full h-full flex-shrink-0">
-              <img
+              <OptimizedImage
                 src={photo.image_url}
                 alt={photo.title}
                 width={800}
