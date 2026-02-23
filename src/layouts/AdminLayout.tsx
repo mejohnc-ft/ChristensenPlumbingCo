@@ -21,6 +21,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useClerk, UserButton } from '@clerk/clerk-react';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 interface NavItem {
   to: string;
@@ -275,7 +276,19 @@ export default function AdminLayout() {
 
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          <Outlet />
+          <ErrorBoundary fallback={
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center max-w-md">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+                <p className="text-gray-600 mb-6">An error occurred while loading this page.</p>
+                <a href="/admin" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  Back to Dashboard
+                </a>
+              </div>
+            </div>
+          }>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

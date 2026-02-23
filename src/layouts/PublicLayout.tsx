@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import ThemeToggle from '../components/navigation/ThemeToggle';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { MainSchemas } from '@/lib/seo';
 import { trackPageView, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
 
@@ -325,7 +326,17 @@ export default function PublicLayout() {
 
       {/* Main Content */}
       <main className="flex-1">
-        <Outlet />
+        <ErrorBoundary fallback={
+          <div className="flex-1 flex items-center justify-center py-20">
+            <div className="text-center max-w-md px-4">
+              <h2 className="font-display text-2xl font-semibold text-t-text mb-4">Something went wrong</h2>
+              <p className="text-t-text-secondary mb-6">We encountered an unexpected error loading this page.</p>
+              <a href="/" className="btn-gold px-6 py-3">Return Home</a>
+            </div>
+          </div>
+        }>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Footer - Editorial Style */}

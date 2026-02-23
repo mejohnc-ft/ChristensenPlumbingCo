@@ -5,22 +5,25 @@ import { getSupabaseAdmin } from './_shared/supabase';
 import { verifyAuth, requireAdmin } from './_shared/auth';
 
 export default async function handler(request: Request, _context: Context) {
-  if (request.method === 'OPTIONS') return handleOptions();
-  if (request.method !== 'POST') return errorResponse('Method not allowed', 405);
+  if (request.method === 'OPTIONS') return handleOptions(request);
+
+  const origin = request.headers.get('Origin');
+
+  if (request.method !== 'POST') return errorResponse('Method not allowed', 405, origin);
 
   const auth = await verifyAuth(request);
-  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403);
+  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403, origin);
 
   const contentType = request.headers.get('Content-Type') || '';
   if (!contentType.includes('multipart/form-data')) {
-    return errorResponse('Content-Type must be multipart/form-data', 400);
+    return errorResponse('Content-Type must be multipart/form-data', 400, origin);
   }
 
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
   const bucket = (formData.get('bucket') as string) || 'photos';
 
-  if (!file) return errorResponse('No file provided', 400);
+  if (!file) return errorResponse('No file provided', 400, origin);
 
   const supabase = getSupabaseAdmin();
   const ext = file.name.split('.').pop();
@@ -33,9 +36,9 @@ export default async function handler(request: Request, _context: Context) {
     upsert: false,
   });
 
-  if (error) return errorResponse(error.message, 500);
+  if (error) return errorResponse(error.message, 500, origin);
 
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
 
-  return jsonResponse({ url: urlData.publicUrl, path: filePath, bucket });
+  return jsonResponse({ url: urlData.publicUrl, path: filePath, bucket }, 200, origin);
 }

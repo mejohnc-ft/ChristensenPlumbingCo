@@ -5,8 +5,9 @@ import { getSupabaseAdmin } from './_shared/supabase';
 import { verifyAuth, requireAdmin } from './_shared/auth';
 
 export default async function handler(request: Request, _context: Context) {
-  if (request.method === 'OPTIONS') return handleOptions();
+  if (request.method === 'OPTIONS') return handleOptions(request);
 
+  const origin = request.headers.get('Origin');
   const url = new URL(request.url);
   const pathParts = url.pathname.replace(/^\/api\/settings\/?/, '').split('/').filter(Boolean);
   const key = pathParts[0];
@@ -15,20 +16,20 @@ export default async function handler(request: Request, _context: Context) {
   if (request.method === 'GET') {
     if (key) {
       const { data, error } = await supabase.from('site_settings').select('*').eq('key', key).single();
-      if (error) return errorResponse('Setting not found', 404);
-      return jsonResponse(data);
+      if (error) return errorResponse('Setting not found', 404, origin);
+      return jsonResponse(data, 200, origin);
     }
 
     const category = url.searchParams.get('category');
     let query = supabase.from('site_settings').select('*');
     if (category) query = query.eq('category', category);
     const { data, error } = await query;
-    if (error) return errorResponse(error.message, 500);
-    return jsonResponse(data ?? []);
+    if (error) return errorResponse(error.message, 500, origin);
+    return jsonResponse(data ?? [], 200, origin);
   }
 
   const auth = await verifyAuth(request);
-  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403);
+  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403, origin);
 
   if (request.method === 'PUT') {
     const body = await request.json();
@@ -43,25 +44,25 @@ export default async function handler(request: Request, _context: Context) {
           .upsert({ key: setting.key, value: setting.value, category: setting.category || 'general' }, { onConflict: 'key' })
           .select()
           .single();
-        if (error) return errorResponse(error.message, 500);
+        if (error) return errorResponse(error.message, 500, origin);
         await supabase.rpc('log_audit_event', { p_action: 'update', p_table_name: 'site_settings', p_record_id: data.id, p_old_values: old, p_new_values: setting });
         results.push(data);
       }
-      return jsonResponse(results);
+      return jsonResponse(results, 200, origin);
     }
 
     // Single update
-    if (!key) return errorResponse('Key required', 400);
+    if (!key) return errorResponse('Key required', 400, origin);
     const { data: old } = await supabase.from('site_settings').select('*').eq('key', key).single();
     const { data, error } = await supabase
       .from('site_settings')
       .upsert({ key, value: body.value, category: body.category || 'general' }, { onConflict: 'key' })
       .select()
       .single();
-    if (error) return errorResponse(error.message, 500);
+    if (error) return errorResponse(error.message, 500, origin);
     await supabase.rpc('log_audit_event', { p_action: 'update', p_table_name: 'site_settings', p_record_id: data.id, p_old_values: old, p_new_values: body });
-    return jsonResponse(data);
+    return jsonResponse(data, 200, origin);
   }
 
-  return errorResponse('Method not allowed', 405);
+  return errorResponse('Method not allowed', 405, origin);
 }

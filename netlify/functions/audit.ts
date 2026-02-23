@@ -5,11 +5,14 @@ import { getSupabaseAdmin } from './_shared/supabase';
 import { verifyAuth, requireAdmin } from './_shared/auth';
 
 export default async function handler(request: Request, _context: Context) {
-  if (request.method === 'OPTIONS') return handleOptions();
-  if (request.method !== 'GET') return errorResponse('Method not allowed', 405);
+  if (request.method === 'OPTIONS') return handleOptions(request);
+
+  const origin = request.headers.get('Origin');
+
+  if (request.method !== 'GET') return errorResponse('Method not allowed', 405, origin);
 
   const auth = await verifyAuth(request);
-  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403);
+  if (!requireAdmin(auth)) return auth instanceof Response ? auth : errorResponse('Forbidden', 403, origin);
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get('page') || '1');
@@ -32,7 +35,7 @@ export default async function handler(request: Request, _context: Context) {
     .range((page - 1) * perPage, page * perPage - 1);
 
   const { data, error, count } = await query;
-  if (error) return errorResponse(error.message, 500);
+  if (error) return errorResponse(error.message, 500, origin);
 
-  return jsonResponse({ data: data ?? [], total: count ?? 0, page, per_page: perPage, has_more: (count ?? 0) > page * perPage });
+  return jsonResponse({ data: data ?? [], total: count ?? 0, page, per_page: perPage, has_more: (count ?? 0) > page * perPage }, 200, origin);
 }

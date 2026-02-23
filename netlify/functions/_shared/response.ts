@@ -1,12 +1,12 @@
-import { CORS_HEADERS } from './cors';
+import { getCorsHeaders } from './cors';
 
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: unknown, status = 200, origin?: string | null): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' },
   });
 }
 
-export function errorResponse(message: string, status = 400): Response {
-  return jsonResponse({ error: message }, status);
+export function errorResponse(message: string, status = 400, origin?: string | null): Response {
+  return jsonResponse({ error: message }, status, origin);
 }
