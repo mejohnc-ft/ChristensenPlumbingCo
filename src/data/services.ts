@@ -9,6 +9,12 @@ export interface ServiceHowTo {
   steps: HowToStep[];
 }
 
+export interface BeforeAfterPair {
+  beforeSrc: string;
+  afterSrc: string;
+  caption: string;
+}
+
 export interface ServiceData {
   slug: string;
   name: string;
@@ -19,6 +25,7 @@ export interface ServiceData {
   faqs: Array<{ question: string; answer: string }>;
   relatedServices: string[];
   howTo?: ServiceHowTo;
+  beforeAfterPairs?: BeforeAfterPair[];
 }
 
 export const SERVICES: ServiceData[] = [
@@ -121,6 +128,10 @@ export const SERVICES: ServiceData[] = [
       },
     ],
     relatedServices: ['emergency-plumbing', 'pipe-repair', 'sewer-services'],
+    beforeAfterPairs: [
+      { beforeSrc: '/images/portfolio/drain-before-1.jpg', afterSrc: '/images/portfolio/drain-after-1.jpg', caption: 'Kitchen drain cleared of heavy grease buildup' },
+      { beforeSrc: '/images/portfolio/drain-before-2.jpg', afterSrc: '/images/portfolio/drain-after-2.jpg', caption: 'Main sewer line cleared of tree root intrusion' },
+    ],
     howTo: {
       name: 'How to Prevent Clogged Drains',
       description: 'Simple maintenance steps to keep your drains flowing freely and avoid costly clogs in your San Diego home.',
@@ -176,6 +187,10 @@ export const SERVICES: ServiceData[] = [
       },
     ],
     relatedServices: ['emergency-plumbing', 'pipe-repair', 'kitchen-plumbing'],
+    beforeAfterPairs: [
+      { beforeSrc: '/images/portfolio/waterheater-before-1.jpg', afterSrc: '/images/portfolio/waterheater-after-1.jpg', caption: 'Old corroded tank replaced with new 50-gallon unit' },
+      { beforeSrc: '/images/portfolio/waterheater-before-2.jpg', afterSrc: '/images/portfolio/waterheater-after-2.jpg', caption: 'Tankless water heater upgrade in a Carlsbad home' },
+    ],
     howTo: {
       name: 'How to Maintain Your Water Heater',
       description: 'Annual maintenance steps to extend the life of your water heater and improve efficiency.',
@@ -231,6 +246,10 @@ export const SERVICES: ServiceData[] = [
       },
     ],
     relatedServices: ['leak-detection', 'emergency-plumbing', 'bathroom-renovation'],
+    beforeAfterPairs: [
+      { beforeSrc: '/images/portfolio/pipe-before-1.jpg', afterSrc: '/images/portfolio/pipe-after-1.jpg', caption: 'Corroded galvanized pipes replaced with PEX' },
+      { beforeSrc: '/images/portfolio/pipe-before-2.jpg', afterSrc: '/images/portfolio/pipe-after-2.jpg', caption: 'Slab leak repair in a La Mesa home' },
+    ],
   },
   {
     slug: 'leak-detection',
@@ -330,6 +349,10 @@ export const SERVICES: ServiceData[] = [
       },
     ],
     relatedServices: ['pipe-repair', 'water-heaters', 'kitchen-plumbing'],
+    beforeAfterPairs: [
+      { beforeSrc: '/images/portfolio/bath-before-1.jpg', afterSrc: '/images/portfolio/bath-after-1.jpg', caption: 'Complete bathroom plumbing renovation in San Diego' },
+      { beforeSrc: '/images/portfolio/bath-before-2.jpg', afterSrc: '/images/portfolio/bath-after-2.jpg', caption: 'Walk-in shower conversion with new plumbing' },
+    ],
   },
   {
     slug: 'kitchen-plumbing',

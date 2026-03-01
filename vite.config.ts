@@ -36,6 +36,14 @@ export const PRERENDER_ROUTES = [
   '/areas/la-mesa',
   '/faq',
   '/contact',
+  '/pricing',
+  '/compare/big-box-stores',
+  '/compare/handyman-services',
+  '/compare/diy-plumbing',
+  '/guides',
+  '/guides/plumbing-maintenance-checklist',
+  '/guides/emergency-plumbing-guide',
+  '/guides/water-heater-buying-guide',
 ];
 
 // https://vitejs.dev/config/
