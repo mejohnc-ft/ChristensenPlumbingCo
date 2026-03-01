@@ -4,6 +4,8 @@ import { Phone, ArrowRight, ChevronDown, CheckCircle2, MapPin } from 'lucide-rea
 import { PageSEO, FAQSchema, HowToSchema } from '@/lib/seo';
 import { getServiceBySlug, SERVICES } from '@/data/services';
 import { SEO_DEFAULTS } from '@/lib/seo';
+import LeadCaptureForm from '@/components/forms/LeadCaptureForm';
+import BeforeAfterGallery from '@/components/sections/BeforeAfterGallery';
 
 const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
@@ -94,6 +96,14 @@ export default function ServicePage() {
           </div>
         </div>
       </section>
+
+      {/* Before & After Gallery */}
+      {service.beforeAfterPairs && service.beforeAfterPairs.length > 0 && (
+        <BeforeAfterGallery
+          pairs={service.beforeAfterPairs}
+          title={`${service.name} Results`}
+        />
+      )}
 
       {/* FAQ Accordion */}
       <section className="py-20 lg:py-28 bg-t-page-alt">
@@ -196,22 +206,48 @@ export default function ServicePage() {
         </section>
       )}
 
-      {/* CTA Section */}
-      <section className="py-20 lg:py-24 bg-gold-600">
-        <div className="container-editorial text-center">
-          <h2 className="font-display text-3xl lg:text-4xl text-white mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-gold-100 text-lg mb-8 max-w-2xl mx-auto">
-            Call today for a free estimate on {service.name.toLowerCase()} services in San Diego.
-          </p>
-          <a
-            href={PHONE_LINK}
-            className="inline-flex items-center justify-center gap-3 bg-navy-900 text-white px-6 py-4 text-base sm:px-10 sm:py-5 sm:text-xl font-medium hover:bg-navy-800 transition-colors"
-          >
-            <Phone className="w-6 h-6" />
-            <span>{PHONE_NUMBER}</span>
-          </a>
+      {/* CTA Section with Lead Form */}
+      <section className="py-20 lg:py-24 bg-navy-900">
+        <div className="container-editorial">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <h2 className="font-display text-3xl lg:text-4xl text-white mb-4">
+                Get a Free {service.name} Estimate
+              </h2>
+              <p className="text-navy-200 text-lg mb-6">
+                Fill out the form and we&apos;ll get back to you within 30 minutes during business hours. Or call us directly for immediate assistance.
+              </p>
+              <a
+                href={PHONE_LINK}
+                className="inline-flex items-center gap-3 text-gold-400 text-xl font-semibold hover:text-gold-300 transition-colors"
+              >
+                <Phone className="w-6 h-6" />
+                <span>{PHONE_NUMBER}</span>
+              </a>
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 text-navy-200">
+                  <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0" />
+                  <span className="text-sm">Free Estimates</span>
+                </div>
+                <div className="flex items-center gap-2 text-navy-200">
+                  <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0" />
+                  <span className="text-sm">Licensed & Insured</span>
+                </div>
+                <div className="flex items-center gap-2 text-navy-200">
+                  <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0" />
+                  <span className="text-sm">24/7 Emergency</span>
+                </div>
+                <div className="flex items-center gap-2 text-navy-200">
+                  <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0" />
+                  <span className="text-sm">Upfront Pricing</span>
+                </div>
+              </div>
+            </div>
+            <LeadCaptureForm
+              preselectedService={service.name}
+              heading={`Request ${service.name} Service`}
+            />
+          </div>
         </div>
       </section>
     </div>

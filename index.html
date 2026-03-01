@@ -70,6 +70,18 @@
       <input type="text" name="service" />
       <textarea name="message"></textarea>
     </form>
+    <form name="service-lead" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="tel" name="phone" />
+      <input type="text" name="service" />
+      <input type="text" name="area" />
+      <textarea name="message"></textarea>
+    </form>
+    <form name="guide-download" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="text" name="guide" />
+    </form>
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

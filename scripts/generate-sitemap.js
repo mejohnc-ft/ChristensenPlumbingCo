@@ -26,6 +26,8 @@ const STATIC_PAGES = [
   { loc: '/privacy', changefreq: 'yearly', priority: 0.3 },
   { loc: '/terms', changefreq: 'yearly', priority: 0.3 },
   { loc: '/blog', changefreq: 'weekly', priority: 0.7 },
+  { loc: '/pricing', changefreq: 'monthly', priority: 0.7 },
+  { loc: '/guides', changefreq: 'monthly', priority: 0.6 },
 ];
 
 // Service pages
@@ -101,8 +103,22 @@ const AREA_PAGES = [
   { loc: '/areas/la-mesa', changefreq: 'monthly', priority: 0.6 },
 ];
 
+// Comparison pages
+const COMPARISON_PAGES = [
+  { loc: '/compare/big-box-stores', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/compare/handyman-services', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/compare/diy-plumbing', changefreq: 'monthly', priority: 0.6 },
+];
+
+// Guide pages
+const GUIDE_PAGES = [
+  { loc: '/guides/plumbing-maintenance-checklist', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/guides/emergency-plumbing-guide', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/guides/water-heater-buying-guide', changefreq: 'monthly', priority: 0.6 },
+];
+
 // Generate and write sitemap
-const allPages = [...STATIC_PAGES, ...SERVICE_PAGES, ...AREA_PAGES];
+const allPages = [...STATIC_PAGES, ...SERVICE_PAGES, ...AREA_PAGES, ...COMPARISON_PAGES, ...GUIDE_PAGES];
 const sitemap = generateSitemap(allPages);
 
 const outputPath = resolve(__dirname, '../dist/sitemap.xml');

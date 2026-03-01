@@ -20,6 +20,10 @@ const PrivacyPolicyPage = lazy(() => import('../pages/public/PrivacyPolicyPage')
 const TermsOfServicePage = lazy(() => import('../pages/public/TermsOfServicePage'));
 const BlogPage = lazy(() => import('../pages/public/BlogPage'));
 const BlogPostPage = lazy(() => import('../pages/public/BlogPostPage'));
+const PricingPage = lazy(() => import('../pages/public/PricingPage'));
+const ComparisonPage = lazy(() => import('../pages/public/ComparisonPage'));
+const GuidesPage = lazy(() => import('../pages/public/GuidesPage'));
+const GuidePage = lazy(() => import('../pages/public/GuidePage'));
 
 // Lazy-loaded admin pages
 const AdminLayout = lazy(() => import('../layouts/AdminLayout'));
@@ -68,6 +72,10 @@ export const router = createBrowserRouter([
       { path: '/terms', element: <SuspenseWrapper><TermsOfServicePage /></SuspenseWrapper> },
       { path: '/blog', element: <SuspenseWrapper><BlogPage /></SuspenseWrapper> },
       { path: '/blog/:slug', element: <SuspenseWrapper><BlogPostPage /></SuspenseWrapper> },
+      { path: '/pricing', element: <SuspenseWrapper><PricingPage /></SuspenseWrapper> },
+      { path: '/compare/:slug', element: <SuspenseWrapper><ComparisonPage /></SuspenseWrapper> },
+      { path: '/guides', element: <SuspenseWrapper><GuidesPage /></SuspenseWrapper> },
+      { path: '/guides/:slug', element: <SuspenseWrapper><GuidePage /></SuspenseWrapper> },
     ],
   },
   {
