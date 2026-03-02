@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApiClient } from '@/lib/api';
-import type { DashboardStats, PaginatedResponse, Project, Review, Lead, PortfolioPhoto, ReviewAggregates } from '@/types/admin';
+import type { DashboardStats, PaginatedResponse, Project, Lead, PortfolioPhoto, ReviewAggregates } from '@/types/admin';
 
 export function useDashboardStats() {
   const api = useApiClient();

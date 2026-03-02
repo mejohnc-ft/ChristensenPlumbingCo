@@ -1,5 +1,4 @@
 import {
-  LayoutDashboard,
   FolderKanban,
   Image,
   Star,

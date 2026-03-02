@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Mail, Phone } from 'lucide-react';
+import { Users, Plus, Edit, Trash2 } from 'lucide-react';
 import { useTeam } from '@/hooks/useTeam';
 import LoadingState from '@/components/admin/LoadingState';
 import ErrorState from '@/components/admin/ErrorState';
