@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Phone, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { SERVICES } from '@/data/services';
 
-const PHONE_NUMBER = '(619) 433-2169';
 const PHONE_LINK = 'tel:+16194332169';
 
 type PropertyType = 'house' | 'condo' | 'commercial';

@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import ThemeToggle from '../components/navigation/ThemeToggle';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { MainSchemas } from '@/lib/seo';
 import { trackPageView, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
 
@@ -325,7 +326,9 @@ export default function PublicLayout() {
 
       {/* Main Content */}
       <main className="flex-1">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Footer - Editorial Style */}

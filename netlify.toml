@@ -23,6 +23,18 @@
   [headers.values]
     Cache-Control = "public, max-age=2592000"
 
+# Service worker — must not be cached
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# PWA manifest — must not be cached
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 # Security headers on all pages
 [[headers]]
   for = "/*"

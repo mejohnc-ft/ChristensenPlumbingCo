@@ -33,7 +33,7 @@ export default function OptimizedImage({
   loading = 'lazy',
   className,
 }: OptimizedImageProps) {
-  const { webpSrcSet, jpgSrcSet, webpSrc } = deriveVariants(src);
+  const { webpSrcSet, jpgSrcSet } = deriveVariants(src);
 
   return (
     <picture>
