@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { router } from './routes/router';
 import { ThemeProvider } from './contexts/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import { initializeBaseMeta } from './lib/seo';
 import './index.css';
 
@@ -14,9 +15,11 @@ const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undef
 
 const app = (
   <StrictMode>
-    <ThemeProvider>
-      <RouterProvider router={router} />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </ErrorBoundary>
   </StrictMode>
 );
 
